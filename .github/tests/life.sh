@@ -14,7 +14,13 @@ fresh() { # new sandbox with the template; "setup" also applies the Kavya exampl
   T="$(mktemp -d)"
   cp -R "$REPO/life" "$REPO/AGENTS.md" "$REPO/CLAUDE.md" "$REPO/context.md" \
     "$REPO/current.md" "$REPO/queue.md" "$REPO/.life" "$REPO/.claude" "$REPO/areas" "$T/"
-  if [ "${1:-}" = setup ]; then rm "$T/.life/SETUP_NEEDED"; cp "$REPO"/examples/kavya/*.md "$T/"; fi
+  if [ "${1:-}" = setup ]; then
+    rm "$T/.life/SETUP_NEEDED"; cp "$REPO"/examples/kavya/*.md "$T/"
+    # a set-up copy has its "About the person" section filled in
+    P="$(grep -v '^<!--' "$REPO/examples/kavya/about-the-person.md")" awk '
+      /personal:start/ { print; print ENVIRON["P"]; skip = 1; next } /personal:end/ { skip = 0 } !skip' \
+      "$T/AGENTS.md" > "$T/A.tmp" && mv "$T/A.tmp" "$T/AGENTS.md"
+  fi
   cd "$T" || exit 1
 }
 ok()   { PASS=$((PASS + 1)); }
@@ -291,6 +297,72 @@ has "skip counts as asked today" "$(./life learn)" "already asked today"
 sed -i.bak "s/^Last asked: .*/Last asked: $(days_ago 1)/" .life/to-learn.md
 has "second skip drops" "$(./life learned t1 --skip)" "dropped after two skips"
 out="$(./life learned t99 2>&1)"; has "unknown topic" "$out" "no topic t99"
+
+# --- setup: the quick-start build in one call
+fresh
+out="$(./life setup --name Kavya --thing "book the passport slot" --adhd trial --step "open the Passport Seva site")"
+has "setup ok" "$out" "ok: set up for Kavya"
+has "setup passes check" "$out" "Life OS check: all good."
+[ ! -f .life/SETUP_NEEDED ] && ok || bad "setup removes SETUP_NEEDED"
+[ -f .life/to-learn.md ] && ok || bad "setup copies to-learn"
+[ -f .claude/.adhd-always ] && ok || bad "setup trial turns adhd on"
+lacks "setup clears placeholders" "$(cat context.md current.md queue.md)" "{{"
+has "setup names them" "$(cat context.md)" "Kavya. The rest is learned"
+has "setup marks unknowns" "$(awk '/^## People/,/^## Fixed/' context.md)" "Not known yet."
+has "setup keeps the repo row" "$(cat context.md)" "| This repo |"
+has "setup puts the thing in Now" "$(./life queue now)" "n1 book the passport slot"
+lacks "setup drops the setup item" "$(cat queue.md)" "to set up Life OS"
+has "setup logs day one" "$(./life status)" 'stopped: '"$TODAY"' "Life OS started"'
+has "setup first step" "$(./life status)" "at: open the Passport Seva site"
+p_sec="$(awk '/personal:start/,/personal:end/' AGENTS.md)"
+has "setup writes about the person" "$p_sec" "**Name:** Kavya"
+lacks "setup keeps the rest of AGENTS" "$(grep -c 'Crisis overrides everything' AGENTS.md)" "0"
+out="$(./life setup --name X --thing y --adhd no 2>&1)"; rc=$?
+[ $rc = 2 ] && ok || bad "setup twice refused" "$out"
+fresh
+out="$(./life setup --name X --thing y --adhd maybe 2>&1)"; has "setup validates adhd" "$out" "--adhd must be"
+./life setup --name X --thing y --adhd no >/dev/null
+[ ! -f .claude/.adhd-always ] && ok || bad "setup no leaves adhd off"
+
+# --- weekly review packet and reviewed
+fresh setup
+cp -R "$REPO/examples/kavya/areas" .
+./life therapy-note "private thing" >/dev/null
+out="$(./life review)"
+has "review shows done" "$out" "d1 Badminton Saturday"
+has "review shows inbox" "$out" "i1 Pay the BESCOM bill"
+has "review shows areas" "$out" "family: My wedding jobs"
+has "review counts notes" "$out" "therapy_notes_this_week: 1"
+lacks "review never shows notes" "$out" "private thing"
+out="$(./life reviewed --focus "retry PR" --focus "passport" --win "a heavy week, handled")"
+has "reviewed ok" "$out" "Done this week cleared"
+has "reviewed empties Done" "$(./life queue done)" "done_this_week[0]: none"
+e="$(awk '/^## 20/{n++} n==1' current.md)"
+has "reviewed logs the review" "$e" "## $TODAY — Weekly review"
+has "reviewed keeps the wins" "$e" "- Badminton Saturday"
+has "reviewed adds wins" "$e" "- a heavy week, handled"
+has "reviewed logs focus" "$e" "next week's focus: retry PR; passport"
+has "reviewed stamps" "$(./life status)" "review: not due (last 0 days ago)"
+has "reviewed plain stamps only" "$(./life reviewed)" "stamped"
+
+# --- learn prints only the topic's notes
+fresh setup
+cp .claude/skills/life-architect/to-learn.md .life/to-learn.md
+out="$(./life learn)"
+has "learn prints topic notes" "$out" "Offer a pick: mornings"
+lacks "learn prints only that topic" "$out" "Tele-MANAS"
+
+# --- check lints with fixes
+fresh setup
+has "check clean" "$(./life check)" "all good"
+./life add --now a >/dev/null; printf -- '- [ ] b\n- [ ] c\n' > extra; awk 'FNR==NR{x=x $0 "\n"; next} {print} /^## Now/{printf "\n%s", x}' extra queue.md > q && mv q queue.md
+out="$(./life check)"; has "check Now over 3" "$out" "Now has 5 items (max 3)"
+has "check names the fix" "$out" "fix: ./life move n5 next"
+fresh setup
+grep -v '^## Inbox' queue.md > q && mv q queue.md
+has "check missing section" "$(./life check)" "no '## Inbox' section"
+fresh setup
+has "check waiting without date" "$(printf '# Queue\n\n## Now\n\n## Next\n\n## Waiting on\n\n- Bank\n\n## Inbox\n\n## Someday\n\n## Done this week\n' > queue.md; ./life check)" "w1 has no 'since YYYY-MM-DD'"
 
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"

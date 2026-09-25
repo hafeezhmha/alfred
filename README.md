@@ -206,6 +206,7 @@ edit by hand.
 ./life plan n1 x2      set today's Now  ./life wait x1 "Ana"  waiting on someone
 ./life log --stopped "page 3 of the form"   today's "where I stopped"
 ./life ritual          which ritual fits right now, and its steps
+./life review          the whole week on one screen (then ./life reviewed)
 ./life nudge on 09:30  a daily desktop nudge
 ./life help            everything else
 ```

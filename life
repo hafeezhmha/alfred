@@ -248,7 +248,7 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
       extra[++xc] = $0; next }
     { print }
     END { if (state == "in") out(); else if (state == "") { print ""; out() } }
-  ' current.md > "$tmp"
+  ' current.md | cat -s > "$tmp"
   mv "$tmp" current.md
   lines="$(awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | grep -c . || true)"
   echo "ok: log $([ "$mode" = merge ] && echo "updated" || echo "added") for $TODAY"
@@ -310,7 +310,8 @@ cmd_learn() {
   echo "  ask: at the END of a session only, one question with a suggested answer, framed \"Quick one, skip anytime:\""
   echo "  never: in a session that used /stuck, on a rough day, when they're in a hurry"
   echo "  write: $(learn_dest "$name")"
-  echo "  guide: .claude/skills/life-architect/SKILL.md (the matching Phase 1-4 notes)"
+  echo "  notes:"
+  N="$name" awk '{sub(/\r$/, "")} /^## /{f = (substr($0, 4) == ENVIRON["N"]); next} f && NF {print "    " $0}' .claude/skills/life-architect/topics.md
   echo "next:"
   echo "  ./life learned $id          after writing the answer"
   echo "  ./life learned $id --skip   if they skip"
@@ -509,10 +510,136 @@ cmd_nudge() {
   esac
 }
 
-cmd_reviewed() {
+review_stamp() { mkdir -p .life; date +%s > "$REVIEW_STAMP"; }
+
+cmd_review() { # the weekly review packet, one read
+  q_load
+  rd="$(review_days)"; if [ "$rd" = none ]; then rl="first review"; else rl="last $rd days ago"; fi
+  echo "review: week to $TODAY ($rl)"
+  q_list d
+  echo "log_this_week:"
+  T="$TODAY" awk "$DAYFN"'
+    { sub(/\r$/, "") }
+    /^```/ { fence = !fence; next }
+    fence { next }
+    /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/ { d = substr($0, 4, 10); on = (day(ENVIRON["T"]) - day(d) < 7)
+      if (on) { tp = $0; sub(/^## [^ ]+ *(— *)?/, "", tp); printf "  %s %s\n", d, tp; c++ }; next }
+    on && /^Stopped at:/ { sub(/^Stopped at: */, ""); print "    stopped: " $0 }
+    END { if (!c) print "  none" }' current.md
+  q_list i
+  echo "areas:"
+  found=0
+  for f in areas/*/README.md; do
+    [ -f "$f" ] || continue; found=1
+    focus="$(awk '{sub(/\r$/, "")} /^## Current focus/{f=1; next} /^## /{f=0} f && /^- /{sub(/^- /, ""); print; exit}' "$f")"
+    echo "  $(basename "$(dirname "$f")"): ${focus:-(no focus written)}"
+  done
+  [ "$found" = 1 ] || echo "  none yet"
+  echo "therapy_notes_this_week: $(therapy_count) (say the number only, and only if others don't see their screen)"
+  echo "next:"
+  echo "  show wins (done + log), then sort the inbox: ./life move <ids> <section> after their yes"
+  echo "  finish: ./life reviewed --focus \"a\" [--focus \"b\"] [--win \"extra win\"]..."
+}
+
+cmd_reviewed() { # no flags: stamp only. With --focus/--win: log the review, clear Done, stamp, archive.
+  focus=""; wins=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --focus|--win) [ $# -ge 2 ] || die "$1 needs a value"
+        v="$(printf '%s' "$2" | tr '\r\n\t' '   ')"
+        if [ "$1" = --focus ]; then focus="$focus${focus:+; }$v"; else wins="$wins$v"$'\036'; fi; shift 2 ;;
+      *) die "unknown flag '$1'. flags: --focus \"..\" (repeatable), --win \"..\" (repeatable)" ;;
+    esac
+  done
+  if [ -z "$focus$wins" ]; then review_stamp; echo "ok: weekly review stamped for $TODAY"; return; fi
+  q_load
+  set --
+  while IFS= read -r t; do [ -n "$t" ] && set -- "$@" --done "$t"; done <<EOF
+$(printf '%s\n' "$QITEMS" | awk -F'\t' '$1 == "d" { print $4 }')
+$(printf '%s' "$wins" | tr '\036' '\n')
+EOF
+  [ -n "$focus" ] && set -- "$@" --stopped "next week's focus: $focus"
+  cmd_log --new --topic "Weekly review" "$@" >/dev/null
+  # Done this week is now kept in that log entry, so its lines leave queue.md.
+  tmp="$(mktemp)"
+  awk "$QKEYFN"' { raw = $0; sub(/\r$/, "", raw) }
+    /^```/ { fence = !fence }
+    !fence && raw ~ /^##? / { k = key(raw) }
+    k == "d" && raw ~ /^- / { next }
+    { print }' queue.md | cat -s > "$tmp"
+  mv "$tmp" queue.md
+  review_stamp
+  echo "ok: review logged in current.md, Done this week cleared, stamped for $TODAY"
+  cmd_archive | sed 's/^/  /'
+  echo "next:"
+  echo "  end with ONE first action for next week, under two minutes"
+}
+
+# ---- setup: the whole quick-start build in one call ----
+cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first step"]
+  name=""; thing=""; adhd=""; step=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --name|--thing|--adhd|--step) [ $# -ge 2 ] || die "$1 needs a value"
+        v="$(printf '%s' "$2" | tr '\r\n\t' '   ')"
+        case "$1" in --name) name="$v";; --thing) thing="$v";; --adhd) adhd="$v";; --step) step="$v";; esac; shift 2 ;;
+      *) die "unknown flag '$1'. usage: ./life setup --name \"..\" --thing \"..\" --adhd yes|no|trial [--step \"..\"]" ;;
+    esac
+  done
+  [ -f .life/SETUP_NEEDED ] || die "already set up. to change things: say \"re-tune\" (life-architect skill, retune mode)"
+  [ -n "$name" ] && [ -n "$thing" ] || die 'usage: ./life setup --name "Kavya" --thing "book the passport slot" --adhd yes|no|trial [--step "open the site"]'
+  case "$adhd" in yes|no|trial) ;; *) die "--adhd must be yes, no or trial";; esac
+
+  # context.md: name in, every placeholder out, empty sections marked "Not known yet."
+  tmp="$(mktemp)"
+  N="$name" D="$TODAY" awk '
+    function flush() { if (sec != "") { printf "%s", body; if (!filled && sec != "Who this is") print "Not known yet.\n" }; body = ""; filled = 0; prev = "" }
+    { sub(/\r$/, "") }
+    /^Updated:/ { $0 = "Updated: " ENVIRON["D"] }
+    /^## / { flush(); print; print ""; sec = substr($0, 4)
+             if (sec == "Who this is") print ENVIRON["N"] ". The rest is learned a little at a time.\n"
+             next }
+    sec == "" { print; next }
+    /\{\{/ { next }
+    /^[ \t]*$/ { if (body != "" && body !~ /\n\n$/) body = body "\n"; next }
+    { if ($0 ~ /^- / || ($0 ~ /^\| / && $0 !~ /^\|[- |]+\|$/ && prev ~ /^\|[- |]+\|$/) || $0 ~ /^\| This repo/) filled = 1
+      body = body $0 "\n"; prev = $0 }
+    END { flush() }' context.md | cat -s > "$tmp"
+  mv "$tmp" context.md
+
+  # queue.md: drop the setup item, their one thing goes in Now
+  tmp="$(mktemp)"; grep -v 'to set up Life OS' queue.md > "$tmp"; mv "$tmp" queue.md
+  cmd_add --now "$thing" >/dev/null
+
+  # current.md: the install entry goes; today's entry says where to start
+  tmp="$(mktemp)"
+  awk '{ raw = $0; sub(/\r$/, "", raw) } raw ~ /^## \{\{DATE\}\}/ { skip = 1; next } skip && raw ~ /^## / { skip = 0 } !skip { print }' current.md > "$tmp"
+  mv "$tmp" current.md
+  cmd_log --topic "Life OS started" --done "Quick start: three questions" --stopped "${step:-$thing}" >/dev/null
+
+  # AGENTS.md: the personal section, between its markers only
+  mode="$adhd"; [ "$adhd" = trial ] && mode="trial for a week, ask on $(date -d '7 days' +%Y-%m-%d 2>/dev/null || date -v+7d +%Y-%m-%d) whether to keep it"
+  tmp="$(mktemp)"
+  P="## About the person
+
+- **Name:** $name
+- **ADHD mode:** $mode
+- Still learning; open topics in \`.life/to-learn.md\` (\`./life learn\`)." awk '
+    /life-architect:personal:start/ { print; print ENVIRON["P"]; skip = 1; next }
+    /life-architect:personal:end/ { skip = 0 }
+    !skip { print }' AGENTS.md > "$tmp"
+  grep -q 'life-architect:personal:end' "$tmp" || { rm -f "$tmp"; die "AGENTS.md lost its personal-section markers; restore them first"; }
+  mv "$tmp" AGENTS.md
+
+  if [ "$adhd" = no ]; then rm -f .claude/.adhd-always; else touch .claude/.adhd-always; fi
   mkdir -p .life
-  date +%s > "$REVIEW_STAMP"
-  echo "Weekly review stamped for $(date +%Y-%m-%d)."
+  cp .claude/skills/life-architect/to-learn.md .life/to-learn.md
+  rm -f .life/SETUP_NEEDED .life/setup-progress.md
+  review_stamp
+  echo "ok: set up for $name (adhd: $adhd)"
+  cmd_check | sed 's/^/  /'
+  echo "next:"
+  echo "  hand off in 3 lines: what exists now, tomorrow (\"type /life or just say hi\"), the first step: ${step:-$thing}"
 }
 
 cmd_archive() { # move current.md entries older than 4 weeks to archive/current-YYYY.md
@@ -553,16 +680,30 @@ cmd_archive() { # move current.md entries older than 4 weeks to archive/current-
 
 cmd_check() {
   ok=1
+  bad() { echo "problem: $1"; echo "  fix: $2"; ok=0; }
   for f in AGENTS.md CLAUDE.md context.md current.md queue.md; do
-    [ -f "$f" ] || { echo "missing: $f"; ok=0; }
+    [ -f "$f" ] || bad "missing $f" "restore it from the template (git checkout -- $f)"
   done
-  if [ ! -f .life/SETUP_NEEDED ]; then
-    left="$(grep -rlnF '{{' context.md current.md queue.md areas/*/README.md 2>/dev/null || true)"
-    [ -z "$left" ] || { echo "placeholders left in:"; echo "$left" | sed 's/^/  /'; ok=0; }
-    grep -q 'Not set up yet' AGENTS.md && { echo "AGENTS.md: 'About the person' section still empty"; ok=0; }
+  if [ -f queue.md ] && grep -q '^# Queue' queue.md; then
+    for h in Now Next "Waiting on" Inbox Someday "Done this week"; do
+      grep -qE "^## $h"$'\r'"?\$" queue.md || bad "queue.md has no '## $h' section" "add a line '## $h' to queue.md"
+    done
+    q_load; n="$(q_count n)"
+    [ "$n" -le 3 ] || bad "Now has $n items (max 3)" "./life move n$n next"
+    printf '%s\n' "$QITEMS" | awk -F'\t' '$1 == "w" && $4 !~ /since 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/ { printf "w%d\n", $2 }' | while read -r id; do
+      echo "note: $id has no 'since YYYY-MM-DD', so its wait can't be counted (./life wait adds it)"; done
   fi
-  if git remote get-url origin >/dev/null 2>&1; then
-    echo "reminder: this repo has a remote ($(git remote get-url origin)). Make sure it is private."
+  if [ ! -f .life/SETUP_NEEDED ]; then
+    left="$(grep -rlF '{{' context.md current.md queue.md areas/*/README.md 2>/dev/null || true)"
+    [ -z "$left" ] || bad "placeholders left in: $(echo $left)" "fill them in or delete those lines"
+    awk '/personal:start/{f=1} /personal:end/{f=0} f' AGENTS.md | grep -q 'Not set up yet' && bad "AGENTS.md 'About the person' is still empty" "./life setup (quick start) or the life-architect skill"
+    grep -q '^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]' current.md || bad "current.md has no dated entry" "./life log --stopped \"...\""
+  fi
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    git check-ignore -q private/x || bad "private/ is not git-ignored" "add 'private/' to .gitignore"
+    if git remote get-url origin >/dev/null 2>&1; then
+      echo "reminder: this repo has a remote ($(git remote get-url origin)). Make sure it is private."
+    fi
   fi
   [ "$ok" = 1 ] && echo "Life OS check: all good."
   [ "$ok" = 1 ]
@@ -585,7 +726,9 @@ case "${1:-status}" in
   ritual) shift; cmd_ritual "$@" ;;
   learn) cmd_learn ;;
   learned) shift; cmd_learned "$@" ;;
-  reviewed) cmd_reviewed ;;
+  review) cmd_review ;;
+  reviewed) shift; cmd_reviewed "$@" ;;
+  setup) shift; cmd_setup "$@" ;;
   archive) cmd_archive ;;
   check) cmd_check ;;
   nudge) shift; cmd_nudge "$@" ;;
@@ -616,10 +759,14 @@ log and notes
   ./life therapy-note "their words"   private, dated, never read back (only on their yes)
   ./life therapy-note --count         how many this week; the number only
   ./life learned <tN> [--skip]        after asking a learn question
+setup and review
+  ./life setup --name "..." --thing "..." --adhd yes|no|trial [--step "..."]   quick-start build, one call
+  ./life review                   weekly review packet: done, this week's log, inbox, areas, therapy count
+  ./life reviewed --focus "a" [--focus "b"] [--win ".."]   log the review, clear Done, stamp, archive
 upkeep
-  ./life reviewed                 stamp the weekly review done
+  ./life reviewed                 (no flags) just stamp the review done
   ./life archive                  move current.md entries older than 4 weeks to archive/
-  ./life check                    missing files, unfilled placeholders
+  ./life check                    structure problems, each with its fix
   ./life nudge on HH:MM [private] | off | test    daily desktop nudge, only on days Life OS wasn't opened
 HELP
     ;;
