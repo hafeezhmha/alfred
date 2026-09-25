@@ -21,16 +21,20 @@ Nothing to install beyond the agent. It is all plain text you own.
 3. Type `/life-architect`. It interviews you, suggests a system that fits your
    life, and writes the files for you.
 
-### Using OpenCode instead
+### Using OpenCode or Codex instead
 
-Works the same way: `cd life-os && opencode`, then type `/life-architect`.
-OpenCode reads `AGENTS.md` and the skills in `.claude/skills/`, and the
-commands live in `.opencode/commands/`. The one difference: OpenCode has no
-start-of-session hook, so your status appears after your first message rather
-than before it. Saying "hi" is enough.
+Same files, same behaviour. All three agents read `AGENTS.md` (Claude Code
+through `CLAUDE.md`), and every session starts with one call to
+`./life start`, so nothing is loaded twice.
 
-Other assistants (Codex etc.): point them at `AGENTS.md` and ask them to run
-the `life-architect` skill in `.claude/skills/life-architect/SKILL.md`.
+- **OpenCode:** `cd life-os && opencode`, then `/life-architect`. The `/`
+  commands live in `.opencode/commands/` as thin pointers to the same files.
+- **Codex:** `cd life-os && codex`, then say "set up my life os". Codex has no
+  project `/` commands, so ask in plain words: "start my day", "wrap up",
+  "weekly review", "I'm stuck", "grill me on this".
+
+Neither has a start-of-session hook, so your status appears after your first
+message rather than before it. Saying "hi" is enough.
 
 ## Why bother
 
@@ -62,7 +66,7 @@ the `life-architect` skill in `.claude/skills/life-architect/SKILL.md`.
 | `areas/` | One folder per life area (health, money, work…) with its goals and notes. |
 | `archive/` | Old plans and finished projects. Kept, never a source of truth. |
 | `.opencode/commands/` | Thin wrappers so the same `/` commands work in OpenCode. |
-| `life` | Tiny launcher: `./life status`, `./life add "thing"`, `./life check`. |
+| `life` | Tiny launcher: `./life start` (session start), `./life status`, `./life add "thing"`, `./life archive`, `./life check`. |
 | `examples/sam/` | A filled-in example so you can see what "set up" looks like. |
 
 ### Commands and skills
@@ -86,7 +90,7 @@ the `life-architect` skill in `.claude/skills/life-architect/SKILL.md`.
 | Workspace map (`context.md`) | Life map |
 | Session log (`current.md`) | Where you stopped |
 | Task tracker (`linear.md`) | `queue.md`, or a pointer to Todoist/Notion/etc. |
-| Launcher `sync` / `status` | `./life status` at session start |
+| Launcher `sync` / `status` | `./life start` at session start |
 | Grill before building a feature | Grill before a big life decision |
 | `/eod` | `/eod` shutdown ritual |
 | Never touch prod config without approval | Never send, book, buy, or delete without your OK |

@@ -7,25 +7,43 @@ cd "$ROOT"
 
 REVIEW_STAMP=".life/last-weekly-review"
 
+# All awk below strips a trailing \r so files saved with Windows line endings work.
+
 section() { # print the body of a "## <name>" section of a markdown file
-  awk -v h="## $2" '$0 == h {f=1; next} /^## /{f=0} f' "$1" | sed '/^[[:space:]]*$/d'
+  H="## $2" awk '{sub(/\r$/, "")} $0 == ENVIRON["H"] {f=1; next} /^## /{f=0} f' "$1" | sed '/^[[:space:]]*$/d'
+}
+
+waiting_age() { # append "(N days)" to lines holding a YYYY-MM-DD date; plain count, no judgment
+  T="$(date +%Y-%m-%d)" awk '
+    function day(s,   y, m, d) { # days since a fixed epoch, civil calendar
+      y = substr(s, 1, 4) + 0; m = substr(s, 6, 2) + 0; d = substr(s, 9, 2) + 0
+      if (m < 3) { y--; m += 12 }
+      return 365 * y + int(y / 4) - int(y / 100) + int(y / 400) + int((153 * (m - 3) + 2) / 5) + d
+    }
+    BEGIN { today = day(ENVIRON["T"]) }
+    match($0, /20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]/) {
+      n = today - day(substr($0, RSTART, 10))
+      if (n == 0) $0 = $0 " (today)"; else if (n == 1) $0 = $0 " (1 day)"; else if (n > 1) $0 = $0 " (" n " days)"
+    }
+    { print }'
 }
 
 cmd_status() {
   echo "=== Life OS · $(date '+%A %Y-%m-%d %H:%M') ==="
   if [ -f .life/SETUP_NEEDED ]; then
-    echo "Not set up yet. Type /life-architect in Claude Code or OpenCode to set it up."
+    echo "Not set up yet. Type /life-architect (Claude Code, OpenCode) or say \"set up my life os\" (Codex)."
     [ -f .life/setup-progress.md ] && echo "Setup was paused; progress saved in .life/setup-progress.md."
     return 0
   fi
   echo
   echo "--- Where you stopped (top of current.md) ---"
-  awk '/^## 20[0-9][0-9]-/{n++} n==1' current.md
+  top="$(awk '{sub(/\r$/, "")} /^## 20[0-9][0-9]-/{n++} n==1' current.md 2>/dev/null || true)"
+  echo "${top:-(no dated entry in current.md yet)}"
   echo
   if grep -q '^# Queue' queue.md 2>/dev/null; then
     echo "--- Now ---"
     section queue.md "Now" | grep -v '^At most' || true
-    waiting="$(section queue.md "Waiting on" | grep '^- ' || true)"
+    waiting="$(section queue.md "Waiting on" | grep '^- ' | waiting_age || true)"
     if [ -n "$waiting" ]; then echo; echo "--- Waiting on ---"; echo "$waiting"; fi
     inbox="$(section queue.md "Inbox" | grep -c '^- ' || true)"
     echo
@@ -35,33 +53,87 @@ cmd_status() {
     head -5 queue.md
   fi
   if [ -f "$REVIEW_STAMP" ]; then
-    last="$(cat "$REVIEW_STAMP")"
-    days=$(( ( $(date +%s) - last ) / 86400 ))
-    if [ "$days" -ge 7 ]; then echo "Weekly review due (last one ${days} days ago)."; fi
+    last="$(tr -dc '0-9' < "$REVIEW_STAMP")"
+    if [ -n "$last" ]; then
+      days=$(( ( $(date +%s) - last ) / 86400 ))
+      if [ "$days" -ge 7 ]; then echo "Weekly review due (last one ${days} days ago)."; fi
+    fi
   else
     echo "Weekly review: none yet. Run /weekly-review when ready."
   fi
 }
 
+cmd_start() { # the whole session-start read, in one call, for every agent
+  if [ -f .claude/.adhd-always ]; then
+    echo "=== ADHD mode: always on. Apply these rules to every reply this session. \"stop adhd mode\" turns it off for the session; deleting .claude/.adhd-always turns it off for good. ==="
+    awk 'NR==1&&/^---$/{s=1;next} s==1{if(/^---$/)s=2;next} {print}' .claude/skills/i-have-adhd/SKILL.md
+    echo
+  fi
+  cmd_status
+  [ -f .life/SETUP_NEEDED ] && return 0
+  echo
+  echo "=== context.md ==="
+  cat context.md
+}
+
 cmd_add() {
   [ $# -gt 0 ] || { echo 'usage: ./life add "thing to remember"'; exit 1; }
-  line="- [ ] $* ($(date +%Y-%m-%d))"
+  text="$(printf '%s' "$*" | tr '\r\n\t' '   ')"
   tmp="$(mktemp)"
-  awk -v l="$line" '
-    /^## / { if (inbox && !done) { print l; print ""; done=1; blanks=0 } inbox = ($0 == "## Inbox") }
-    { if (inbox && $0 ~ /^[[:space:]]*$/) { blanks++; next }
+  # Passed via ENVIRON, not -v, so backslashes in the text stay literal.
+  L="- [ ] $text ($(date +%Y-%m-%d))" awk '
+    BEGIN { l = ENVIRON["L"] }
+    { h = $0; sub(/\r$/, "", h) }
+    h ~ /^## / { if (inbox && !done) { print l; print ""; done=1; blanks=0 } inbox = (h == "## Inbox") }
+    { if (inbox && h ~ /^[[:space:]]*$/) { blanks++; next }
       while (blanks > 0) { print ""; blanks-- }
       print }
     END { if (inbox && !done) { print l; done=1 } if (!done) exit 3 }
   ' queue.md > "$tmp" || { rm -f "$tmp"; echo "No '## Inbox' section in queue.md; add one first."; exit 1; }
   mv "$tmp" queue.md
-  echo "Captured to Inbox: $*"
+  echo "Captured to Inbox: $text"
 }
 
 cmd_reviewed() {
   mkdir -p .life
   date +%s > "$REVIEW_STAMP"
   echo "Weekly review stamped for $(date +%Y-%m-%d)."
+}
+
+cmd_archive() { # move current.md entries older than 4 weeks to archive/current-YYYY.md
+  cutoff="$(date -d '28 days ago' +%Y-%m-%d 2>/dev/null || date -v-28d +%Y-%m-%d)"
+  work="$(mktemp -d)"
+  trap 'rm -rf "$work"' EXIT
+  # The newest dated entry always stays, so status has something to show.
+  # Undated "## " sections stay too; only dated, old entries move.
+  # Headings inside ``` fences (the entry-shape example) are not entries.
+  C="$cutoff" W="$work" awk '
+    BEGIN { dest = "keep" }
+    { sub(/\r$/, "") }
+    /^```/ { fence = !fence }
+    !fence && /^## / { dest = "keep"
+             if (match($0, /^## 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) && dated++) {
+               d = substr($0, 4, 10)
+               if (d < ENVIRON["C"]) { dest = substr(d, 1, 4); moved++ } } }
+    { print > (ENVIRON["W"] "/" dest) }
+    END { print moved + 0 > (ENVIRON["W"] "/count") }
+  ' current.md
+  moved="$(cat "$work/count")"
+  if [ "$moved" = 0 ]; then
+    echo "Nothing to archive: current.md has no entries older than $cutoff."; return 0
+  fi
+  mkdir -p archive
+  for f in "$work"/[0-9][0-9][0-9][0-9]; do
+    year="$(basename "$f")"; out="archive/current-$year.md"
+    { printf '# current.md archive, %s\n\nEntries moved out of current.md by `./life archive`. Newest first. History, not a source of truth.\n\n' "$year"
+      sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$f"; echo
+      if [ -f "$out" ]; then awk '{sub(/\r$/, "")} /^## /{f=1} f' "$out"; fi
+    } > "$work/out"
+    mv "$work/out" "$out"
+    echo "archived to $out"
+  done
+  sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$work/keep" > current.md # drop trailing blank lines
+  echo "Moved $moved old entries (dated before $cutoff) out of current.md."
 }
 
 cmd_check() {
@@ -83,14 +155,18 @@ cmd_check() {
 
 case "${1:-status}" in
   status|"") cmd_status ;;
+  start) cmd_start ;;
   add) shift; cmd_add "$@" ;;
   reviewed) cmd_reviewed ;;
+  archive) cmd_archive ;;
   check) cmd_check ;;
   help|-h|--help)
     cat <<'HELP'
 ./life status          where you stopped, today's Now, waiting-on, inbox count
+./life start           session start for agents: ADHD rules if on, status, context.md
 ./life add "thing"     capture to the Inbox in queue.md
 ./life reviewed        stamp the weekly review as done
+./life archive         move current.md entries older than 4 weeks to archive/
 ./life check           find missing files and unfilled placeholders
 HELP
     ;;

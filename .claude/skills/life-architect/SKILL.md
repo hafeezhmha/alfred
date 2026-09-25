@@ -178,7 +178,9 @@ Only after an explicit yes. Then write:
 6. ADHD flag: create `.claude/.adhd-always` if they said yes; delete it if
    they said no.
 7. Delete `.life/SETUP_NEEDED` and `.life/setup-progress.md`.
-8. Run `./life check` and fix anything it reports.
+8. Run `./life reviewed` so the first weekly review comes due in 7 days, at
+   the end of the trial week (fresh setup only; skip in retune mode).
+9. Run `./life check` and fix anything it reports.
 
 Store sensitive details (diagnoses, health, money figures, relationship
 issues) only if they agreed; otherwise keep a neutral note, or put them in

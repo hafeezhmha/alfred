@@ -34,11 +34,17 @@ matters).
 ## 5. Next week (3 min)
 
 Pick at most 3 focus items for next week and note fixed commitments that
-change the shape of the week. Clear "Done this week" into a dated line in
-`current.md`. Then run:
+change the shape of the week. Clear "Done this week" into a new
+`## YYYY-MM-DD — Weekly review` entry at the top of `current.md` (wins, next
+week's focus). Then run:
 
 ```bash
 ./life reviewed
+./life archive
 ```
+
+`./life archive` moves `current.md` entries older than four weeks to
+`archive/current-YYYY.md`, so the log stays short enough to read. It only
+moves, never deletes. Mention it in one line only if it moved anything.
 
 End with the first action for Monday, under two minutes.

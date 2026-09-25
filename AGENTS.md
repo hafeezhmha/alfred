@@ -1,8 +1,8 @@
 # Life OS operating contract
 
-This is the agent-neutral operating contract for this Life OS. It is used by
-Claude Code, Codex, other assistants, and the person who owns it. `CLAUDE.md`
-is only a discovery entry point; keep behaviour documented here.
+This is the agent-neutral operating contract for this Life OS, the same for
+Claude Code, OpenCode, Codex and the person who owns it. `CLAUDE.md` only
+imports this file; keep behaviour documented here.
 
 "The person" below means the owner of this repo. Their name, preferences and
 personal rules live in the "About the person" section at the bottom, written by
@@ -10,24 +10,25 @@ the `life-architect` skill during setup.
 
 ## Session start protocol
 
-Every session, before anything else, in this order. In Claude Code a
-SessionStart hook already printed the output of steps 0 and 3; use it rather
-than repeating them. Other agents (OpenCode, Codex…) have no hook: do every
-step yourself on the first message of the session, whatever that message is.
+`./life start` is the whole session-start read, in one call: the ADHD rules
+(if that mode is on), where they stopped, Now, Waiting on, inbox count,
+review due, and `context.md`. In Claude Code a SessionStart hook has already
+run it. OpenCode, Codex and other agents: run it yourself on the first message
+of the session, whatever that message is. Then:
 
-0. If `.claude/.adhd-always` exists, read `.claude/skills/i-have-adhd/SKILL.md`
-   and apply its rules to every reply this session.
-1. If `.life/SETUP_NEEDED` exists, the system is not set up. Greet the person,
-   say in two lines what Life OS does, and offer to run the `life-architect`
-   skill. If `.life/setup-progress.md` exists, offer to resume from it instead.
-   Stop there.
-2. Read `context.md` (the life map), the top entry of `current.md` (where they
-   stopped), and the Now and Waiting-on sections of `queue.md`.
-3. Run `./life status` and use its output. Do not start anything else.
-4. Greet with "Hi <name>," then two to four lines: what they were in the
+1. If it says "Not set up yet", greet the person, say in two lines what Life
+   OS does, and offer to run the `life-architect` skill (or resume from
+   `.life/setup-progress.md` if it mentions one). Stop there.
+2. If it printed ADHD rules, apply them to every reply this session.
+3. Greet with "Hi <name>," then two to four lines: what they were in the
    middle of, where it stopped, and ONE suggested first action small enough to
-   do in two minutes. If `./life status` says a weekly review is due, mention it
-   in one line. Then wait.
+   do in two minutes. If a weekly review is due, say so in one line. Then wait.
+
+**Read once.** Do not re-read files or re-run `./life status` for anything
+that output already showed. Open a file only for what it did not show (the
+rest of `queue.md`, an area README) or right before editing it, and read only
+the section you need. A long session may re-run `./life status` if the files
+have changed since.
 
 Before the session ends, or when something meaningful lands, update the top
 entry of `current.md` (or add a new dated entry if the topic changed). New open
@@ -40,9 +41,9 @@ itself changes: a new area, a new person who matters, a new constraint.
 |---|---|
 | `context.md` | A map, not a log. Add a line when something new appears; never record progress here. |
 | `current.md` | Newest entry first. The "Stopped at" line is the most valuable line in the system. |
-| `queue.md` | Now holds at most 3 items. Capture goes to Inbox; sorting happens in `/eod` and `/weekly-review`. If the person uses an external task app, this file becomes a pointer to it, like a README. |
+| `queue.md` | Now holds at most 3 items. Capture goes to Inbox; sorting happens in `/eod` and `/weekly-review`. Waiting-on items end with `since YYYY-MM-DD` so `./life status` can show their age; when one has waited long enough to chase, offer a follow-up as a suggestion, never as a reproach. If the person uses an external task app, this file becomes a pointer to it, like a README. |
 | `areas/<area>/README.md` | Goals, standards and notes for one life area. Detail goes here, not in `current.md`. |
-| `archive/` | History. Never a source of truth. |
+| `archive/` | History. Never a source of truth. `./life archive` moves `current.md` entries older than four weeks to `archive/current-YYYY.md`; read those only when asked about the past. |
 | `private/` | Git-ignored. Read it only when the person points you at it. |
 
 ## How to treat the person
@@ -101,24 +102,28 @@ person has not confirmed. Propose it; they decide.
 
 ## Output style
 
-`.claude/skills/i-have-adhd/SKILL.md` shapes every reply when the flag file
-`.claude/.adhd-always` exists; the SessionStart hook injects it. The person can
-say "stop adhd mode" for one session or delete the flag for good. Non-Claude
-agents should read that SKILL.md directly, since the hook is Claude Code
-specific.
+ADHD mode is on while `.claude/.adhd-always` exists; `./life start` prints its
+rules. Outside a session, `/i-have-adhd` (or "adhd mode on") loads
+`.claude/skills/i-have-adhd/SKILL.md` for one session.
 
 When a plan, review or comparison is clearer as a page, the optional `lavish`
 skill renders it locally. Never use its `share` command with personal data.
 
 ## Rituals
 
-| Command | When | What |
-|---|---|---|
-| `/start-day` | Morning, or whenever the day starts | Pick 1–3 things for Now, name the first 2-minute step. |
-| `/eod` | End of day | Rewrite the top `current.md` entry from what actually happened, sweep loose ends to Inbox. |
-| `/weekly-review` | Once a week, ~20 min | Empty Inbox, check each area, choose next week's focus. Stamps `./life reviewed`. |
-| `/unstuck` | Frozen, overwhelmed, avoiding | Shrink the next step until it is startable. |
-| `/life-architect` | First run, or when life changes | Setup interview; re-tunes the system. |
+Each ritual is one file. Claude Code and OpenCode expose them as `/`
+commands. In an agent without them (Codex), when the person asks in plain
+words ("start my day", "wrap up", "weekly review", "I'm stuck", "grill me on
+this", "set up my life os"), read the file in the last column and follow it.
+
+| Command | When | What | File |
+|---|---|---|---|
+| `/start-day` | Morning, or whenever the day starts | Pick 1–3 things for Now, name the first 2-minute step. | `.claude/commands/start-day.md` |
+| `/eod` | End of day | Rewrite the top `current.md` entry from what happened, sweep loose ends to Inbox. | `.claude/commands/eod.md` |
+| `/weekly-review` | Once a week, ~20 min | Empty Inbox, check areas, pick next week's focus, archive old log entries. | `.claude/commands/weekly-review.md` |
+| `/unstuck` | Frozen, overwhelmed, avoiding | Shrink the next step until it is startable. | `.claude/commands/unstuck.md` |
+| `/grill-me` | Before a big decision | Interview until the decision is settled. | `.claude/skills/grilling/SKILL.md` |
+| `/life-architect` | First run, or when life changes | Setup interview; re-tunes the system. | `.claude/skills/life-architect/SKILL.md` |
 
 A ritual the person skips is not failure. If one is skipped for two weeks,
 ask once whether to shrink it, move it, or drop it.

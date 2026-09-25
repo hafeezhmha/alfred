@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && { if [ -f .claude/.adhd-always ]; then echo \"=== ADHD MODE ACTIVE (always-on). Rules below apply to every response this session. Say \\\"stop adhd mode\\\" to turn off for this session; delete .claude/.adhd-always to turn it off for good. ===\"; awk 'NR==1&&/^---$/{s=1;next} s==1{if(/^---$/)s=2;next} {print}' .claude/skills/i-have-adhd/SKILL.md; echo; fi; bash ./life status; } 2>&1 || true",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && bash ./life start 2>&1 || true",
             "timeout": 30,
             "statusMessage": "Loading your Life OS"
           }

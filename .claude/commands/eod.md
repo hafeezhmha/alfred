@@ -10,9 +10,11 @@ actually happened, never from what was planned.
 
 ```bash
 date +%Y-%m-%d
-./life status
 git status --short
 ```
+
+Read the top entry of `current.md` and all of `queue.md`; you will edit both.
+No need to run `./life status`; those two reads cover it.
 
 Re-read this conversation for: what got done, what was decided, what was
 started and not finished, anything they said they're worried about. Then ask

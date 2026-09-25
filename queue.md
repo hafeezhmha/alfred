@@ -20,7 +20,8 @@ Ready to do once Now is clear.
 
 ## Waiting on
 
-Blocked on someone or something. Say who and since when.
+Blocked on someone or something. Say who and since when, as
+`- <what>, since YYYY-MM-DD`; `./life status` then shows how long it's been.
 
 ## Inbox
 
