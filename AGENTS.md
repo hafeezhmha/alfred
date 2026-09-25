@@ -24,7 +24,8 @@ Then:
 **Edit through `./life`** (`./life help`): queue moves, today's log entry,
 therapy notes, setup and the review. It gets ids, dates, formats and the Now
 limit right; hand-edit only what no command covers. When something lands:
-`./life log`; new loose ends: `./life add`. **Read once:** don't re-read what
+`./life log`; new loose ends: `./life add`. When they say something is done,
+that is the confirmation: `./life done <id>` right away. **Read once:** don't re-read what
 its output already showed.
 
 ## The files

@@ -14,8 +14,11 @@ Get them moving in under three minutes. One question at a time.
    - Office or long-commute day, or after a late call: one size smaller.
    - Draw from "Stopped at", then Now, Next, then Waiting items that may have
      unblocked (a long day count can become a two-minute "send a nudge").
+   - Fewer items exist than the energy allows? Plan what's there; don't hunt
+     for more.
    - Respect today's fixed commitments. Ask "Go with this?"; adjust once.
-4. **Write it,** after their yes: `./life plan <id> [<id>] [<id>]`
-   (e.g. `./life plan n1 x2`). The rest of Now moves to Next by itself.
+4. **Write it the moment they say yes:** `./life plan <id> [<id>] [<id>]`
+   (e.g. `./life plan n1 x2`), even for one item. The rest of Now moves to
+   Next by itself.
 5. **End with ONE first step** for item 1, under two minutes ("open the tax
    folder"). If the item has an if-then plan, use their words. Nothing after.
