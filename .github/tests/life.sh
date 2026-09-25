@@ -385,8 +385,14 @@ out="$(printf '{"last_assistant_message": "Great, first step: open the site."}' 
 ./life plan n1 >/dev/null
 has "plan settles the owed write" "$(./life pending)" "pending: none"
 printf '{}' | ./life gate >/dev/null 2>&1 && ok || bad "gate clear after the write"
-./life ritual wrap-up >/dev/null; ./life log --stopped "phone plans" --said "got as far as the Jio one" >/dev/null
-has "log settles wrap-up" "$(./life pending)" "pending: none"
+./life ritual wrap-up >/dev/null
+out="$(./life log --stopped "phone plans")"
+has "log without their words keeps wrap-up owed" "$(./life pending)" "pending: log"
+has "log names the missing words" "$out" 'pending: log still needs their exact words'
+out="$(printf '{"last_assistant_message": "Logged. Tomorrow: the second plan."}' | ./life gate 2>&1)"
+has "gate asks for their words" "$out" "needs their exact words"
+./life log --said "got as far as the Jio one" >/dev/null
+has "their words settle wrap-up" "$(./life pending)" "pending: none"
 has "log keeps their words" "$(cat current.md)" 'Their words: "got as far as the Jio one"'
 has "status shows their words" "$(./life status)" 'said: "got as far as the Jio one"'
 ./life ritual review >/dev/null; ./life pending clear reviewed >/dev/null
