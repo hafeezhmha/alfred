@@ -408,10 +408,11 @@ has "Codex Stop hook runs the gate" "$(cat "$REPO/.codex/hooks.json")" 'life\" g
 
 # --- safety net on what the person sends (UserPromptSubmit hook)
 fresh
-for m in "honestly what's the point of anything" "I just want to disappear" "everyone would be better off without me" \
+for m in "honestly what's the point of anything" "what is the point of anything" "I just want to disappear" "everyone would be better off without me" \
          "yaar jeene ka mann nahi karta" "I'm such a burden" "I keep failing at everything"; do
   has "safety flags: $m" "$(printf '{"prompt":"%s"}' "$m" | ./life safety)" "Tele-MANAS 14416"
 done
+fresh setup
 for m in "plan my day" "fix the bug in point() please" "what are the next steps"; do
   [ -z "$(printf '{"prompt":"%s"}' "$m" | ./life safety)" ] && ok || bad "safety stays quiet: $m"
 done
@@ -428,7 +429,7 @@ printf '{"prompt":"ok wrapping up for today. I stopped at comparing two phone pl
 out="$(./life log --stopped "comparing phone plans")"
 e="$(awk '/^## 20/{n++} n==1' current.md)"
 has "log quotes their sentence verbatim" "$e" 'Their words: "I stopped at comparing two phone plans, got as far as the Jio one"'
-lacks "log quotes only that sentence" "$e" "after lunch\""
+lacks "log quotes only that sentence" "$(printf '%s' "$e" | grep '^Their words:')" "after lunch"
 has "log says where the words came from" "$out" "from their last message"
 has "their words settle wrap-up (auto)" "$(./life pending)" "pending: none"
 printf '{"prompt":"done for today, nothing much happened"}' | ./life safety >/dev/null
@@ -437,6 +438,23 @@ lacks "no stopping sentence, no quote" "$(awk '/^## 20/{n++} n==1' current.md)" 
 printf '%s\t%s\n' "$(days_ago 1)" "I stopped at page 9" > .life/last-message
 ./life log --new --stopped "y" >/dev/null
 lacks "yesterday's message is never quoted" "$(awk '/^## 20/{n++} n==1' current.md)" "page 9"
+
+# --- energy with its cause, from their message; the first-message note
+fresh setup
+printf '{"prompt":"ok wrapping up. I stopped at comparing two phone plans, got as far as the Jio one. energy got low after lunch"}' | ./life safety >/dev/null
+./life ritual wrap-up >/dev/null
+./life log --stopped "phone plans" --energy low >/dev/null
+has "bare energy gets their sentence" "$(awk '/^## 20/{n++} n==1' current.md)" 'Energy: low, in their words: "energy got low after lunch"'
+fresh setup
+printf '{"prompt":"I stopped at the form. energy was fine"}' | ./life safety >/dev/null
+./life log --stopped "form" --energy "ok, slept well" >/dev/null
+has "an energy with its cause is left alone" "$(awk '/^## 20/{n++} n==1' current.md)" "Energy: ok, slept well"
+fresh
+has "first message before setup gets the offer note" "$(printf '{"prompt":"hi"}' | ./life safety)" "offer the quick start"
+out="$(printf '{"prompt":"what is the point of anything"}' | ./life safety)"
+lacks "a crisis message never gets the setup note" "$out" "offer the quick start"
+fresh setup
+[ -z "$(printf '{"prompt":"hi"}' | ./life safety)" ] && ok || bad "no setup note once set up"
 
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"
