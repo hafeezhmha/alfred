@@ -10,7 +10,11 @@ answered or readable from the repo.
 - How do you want me to talk to you? a) gentle b) direct and brief c) push me
   hard d) playful
 - Do you identify as ADHD, autistic, dyslexic, or otherwise neurodivergent?
-  Totally optional; it only changes how I shape things.
+  Diagnosed, self-identified or just wondering all count the same. Totally
+  optional; it only changes how I shape things.
+- Which language should I use? a) English b) English with Hindi / Kannada /
+  Tamil / your language mixed in, like texting a friend c) mostly your
+  language
 - When in the day is your brain sharpest? When does it crash?
 - What usually stops you starting something: not knowing the first step,
   it feels too big, boredom, fear of doing it wrong, or something else?
@@ -27,13 +31,19 @@ answered or readable from the repo.
 - Which 3–5 parts of life matter most this season?
 - Who are the people I should know about, and what should I remember about
   each?
+- Who do you live with? a) alone b) flatmates or PG c) parents or family
+  d) partner or spouse
+- How long is your commute, and which days are office days?
+- Any calls outside normal hours, like with US or Europe teams?
+- Family things that shape your week or year? (festivals, weddings, visits
+  home, looking after parents)
 - What happens at fixed times every week?
 - Any constraints every plan must respect? (energy, health, money, time,
   commute, caregiving)
 - What's quietly working right now that we must not break?
 - What keeps falling through the cracks?
-- Where do your to-dos live today, honestly? (head, notes app, paper,
-  screenshots, a task app, email flags)
+- Where do your to-dos live today, honestly? (head, WhatsApp messages to
+  yourself, notes app, paper, screenshots, a task app, email flags)
 
 ## Phase 3 — Past systems
 
@@ -58,6 +68,8 @@ answered or readable from the repo.
 - How many minutes a day will you realistically give this system? a) 2 b) 5
   c) 10 d) 15+
 - What do you already do every day without fail that a ritual could stick to?
+- Does anyone else see your phone or laptop screen? (decides whether
+  reminders name the task)
 - Where do your eyes go most: phone lock screen, terminal, calendar, a notes
   app, paper on the desk?
 - When you miss a day or a week, what should happen?

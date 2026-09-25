@@ -1,20 +1,19 @@
 <div align="center">
 
 ```
-                 .
-               .' '.
-             .'  |  '.
-            /  \ | /  \
-           /  \ \|/ /  \
-          |  \ \ | / /  |
-          |   \ \|/ /   |
-           \   \ | /   /
-            \   \|/   /
-             '.  |  .'
-               '.|.'
-                 |
-                 |        L I F E   O S
-                /
+          .
+       .-' '-.
+     .'   |   '.
+    /  \  |  /  \              _     _  __         ___  ____
+   |  \ \ | / /  |            | |   (_)/ _| ___   / _ \/ ___|
+   |   \ \|/ /   |            | |   | | |_ / _ \ | | | \___ \
+   | \  \ | /  / |            | |___| |  _|  __/ | |_| |___) |
+    \ \  \|/  / /             |_____|_|_|  \___|  \___/|____/
+     '.\  |  /.'
+       '-.|.-'
+          |
+          |
+         /
 ```
 
 **A little operating system for your life, run by an AI agent.**
@@ -239,8 +238,10 @@ This is an organising tool. It doesn't diagnose anything, and it isn't a
 substitute for a doctor, therapist or coach.
 
 > [!IMPORTANT]
-> If you're in crisis, contact local emergency services or a crisis line.
-> US: call or text **988**. UK: Samaritans, **116 123**.
+> If you're in crisis, please reach out now.
+> **India:** Tele-MANAS, call **14416** (free, 24/7, in English and 20 Indian
+> languages). Emergency: **112**.
+> **Elsewhere:** local emergency services, or US **988**, UK Samaritans **116 123**.
 
 ## Changing the template
 

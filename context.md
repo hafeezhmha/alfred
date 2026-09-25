@@ -24,8 +24,8 @@ Updated: {{DATE}}
 
 ## Fixed commitments
 
-Recurring things the week is built around (work hours, school runs, therapy,
-classes, caregiving).
+Recurring things the week is built around (office days and commute, late
+calls, school runs, therapy, classes, caregiving, family time).
 
 - {{COMMITMENT — day/time}}
 

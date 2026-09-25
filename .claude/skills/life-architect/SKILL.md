@@ -93,8 +93,17 @@ This shapes everything after it, including the rest of this interview.
 Cover: name and what to call them; whether they identify as ADHD, autistic,
 dyslexic, anxious, or otherwise neurodivergent (optional, never probe, never
 diagnose); how they like to be spoken to (gentle / direct / drill sergeant /
-playful); when their energy and focus peak and crash; what makes starting
-hard.
+playful); which language mix to use; when their energy and focus peak and
+crash; what makes starting hard.
+
+Diagnosed, self-identified and "not sure, but this sounds like me" are all
+equally valid. Many people, in India especially, can't get or don't want a
+formal assessment, and some families don't talk about it. Never ask whether
+it's diagnosed, and never write "diagnosed" unless they said it.
+
+Language: many people think in a mix (English with Hindi, Kannada, Tamil and
+so on, the way they'd text a friend). Offer to mirror that. Files stay in
+English unless they ask otherwise, so any agent can read them.
 
 If they say ADHD or anything overlapping (executive dysfunction, time
 blindness, task paralysis): offer to make `i-have-adhd` always-on, and switch
@@ -109,6 +118,17 @@ suggestions. Predictability outranks novelty in every design choice after.
 Roles (parent, student, carer, founder…), areas that matter, the people who
 matter and how, fixed commitments, hard constraints (health, money, time,
 location, caregiving).
+
+Ask how their days are actually shaped, not how a template assumes:
+
+- **Home**: alone, flatmates or PG, parents or joint family, partner or
+  in-laws. This decides quiet time, whether devices or rooms are shared, and
+  what family expects of them (festivals, weddings, visits home, caring for
+  parents).
+- **Commute and work hours**: how long the commute is, which days are office
+  days, and any calls outside normal hours (US or Europe teams). Energy
+  windows come from this. The day may start at 11:00 after a late call; don't
+  assume mornings.
 
 Then the two questions that matter most:
 - "What's quietly working right now that we should not break?"
@@ -146,6 +166,8 @@ trade-offs, drawn from `patterns.md` and tuned to what you learned:
    or paper + weekly transcription. Where their eyes already go wins.
 3. **Rituals**: which of `/start-day`, `/eod`, `/weekly-review` they want, and
    how small. A 2-minute version they do beats a 20-minute one they skip.
+   Place them in their real day: after the commute, after the late call,
+   not at a default 9am.
 4. **Anchors**: when each ritual happens, attached to something they already
    do (coffee, commute, kids' bedtime).
 5. **Failure plan**: what happens after a missed day or week. Default: nothing
@@ -179,8 +201,9 @@ Only after an explicit yes. Then write:
    set up", what was decided, Stopped at = their first action.
 5. `AGENTS.md` — replace only the block between
    `<!-- life-architect:personal:start -->` and `…:end -->` with an "About the
-   person" section: name, how to talk to them, brain notes, energy pattern,
-   ritual choices, personal rules, things never to suggest.
+   person" section: name, how to talk to them (tone and language mix), brain
+   notes, energy pattern, home and work shape, ritual choices, personal rules,
+   things never to suggest.
 6. ADHD flag: create `.claude/.adhd-always` if they said yes; delete it if
    they said no.
 7. Delete `.life/SETUP_NEEDED` and `.life/setup-progress.md`.
@@ -191,9 +214,11 @@ Only after an explicit yes. Then write:
    the end of the trial week (fresh setup only; skip in retune mode).
 10. Run `./life check` and fix anything it reports.
 
-Store sensitive details (diagnoses, health, money figures, relationship
-issues) only if they agreed; otherwise keep a neutral note, or put them in
-`private/` if they want them kept out of git.
+Store sensitive details (neurotype, health, money figures, relationship or
+family issues) only if they agreed; otherwise keep a neutral note, or put
+them in `private/` if they want them kept out of git. If family can see
+their screen or files, say so plainly and offer `private/` and a private
+nudge.
 
 ### Phase 7 — First win and handoff
 
