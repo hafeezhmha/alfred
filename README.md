@@ -13,7 +13,6 @@ Plain text you own. Nothing to install but the agent.
 [![tests](https://github.com/hafeezhmha/life-os/actions/workflows/test.yml/badge.svg)](https://github.com/hafeezhmha/life-os/actions/workflows/test.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 [![works with Claude Code, OpenCode, Codex](https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20OpenCode%20%C2%B7%20Codex-5a67d8)](#start-here-about-3-minutes)
-[![made in Bangalore](https://img.shields.io/badge/made%20in-Bangalore-2f855a)](examples/kavya/)
 
 [Start](#start-here-about-3-minutes) ·
 [A morning](#what-a-morning-looks-like) ·
