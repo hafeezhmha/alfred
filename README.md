@@ -1,24 +1,21 @@
 <div align="center">
 
 ```
-          .
-       .-' '-.
-     .'   |   '.
-    /  \  |  /  \              _     _  __         ___  ____
-   |  \ \ | / /  |            | |   (_)/ _| ___   / _ \/ ___|
-   |   \ \|/ /   |            | |   | | |_ / _ \ | | | \___ \
-   | \  \ | /  / |            | |___| |  _|  __/ | |_| |___) |
-    \ \  \|/  / /             |_____|_|_|  \___|  \___/|____/
-     '.\  |  /.'
-       '-.|.-'
-          |
-          |
-         /
+                    __
+               _.-'` /
+           _.-'    .'|
+        .-'     .-'  |       l i f e   o s
+      .'     .-'     /       -------------
+     /    .-'      .'        a little operating
+    |  .-'      _.'          system for your life
+    |.'    _.-'`
+    /_.--'`
+   /
 ```
 
-**A little operating system for your life, run by an AI agent.**
+**Run by an AI agent, for brains that zig, zag, hyperfocus, freeze, forget,
+and start again.**
 
-For brains that zig, zag, hyperfocus, freeze, forget, and start again.
 Plain text you own. Nothing to install but the agent.
 
 </div>
