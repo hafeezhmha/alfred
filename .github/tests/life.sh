@@ -320,6 +320,7 @@ has "setup logs day one" "$(./life status)" 'stopped: '"$TODAY"' "Life OS starte
 has "setup first step" "$(./life status)" "at: open the Passport Seva site"
 p_sec="$(awk '/personal:start/,/personal:end/' AGENTS.md)"
 has "setup writes about the person" "$p_sec" "**Name:** Kavya"
+has "setup says it is finished" "$p_sec" "Setup is finished; never run it again"
 lacks "setup keeps the rest of AGENTS" "$(grep -c 'Crisis overrides everything' AGENTS.md)" "0"
 out="$(./life setup --name X --thing y --adhd no 2>&1)"; rc=$?
 [ $rc = 2 ] && ok || bad "setup twice refused" "$out"

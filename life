@@ -729,7 +729,8 @@ cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first 
 
 - **Name:** $name
 - **ADHD mode:** $mode
-- Still learning; open topics in \`.life/to-learn.md\` (\`./life learn\`)." awk '
+- **Set up:** $TODAY (quick start). Setup is finished; never run it again unless they ask to re-tune.
+- **Open topics:** a few questions for later, one a day at the end of a session (\`./life learn\`)." awk '
     /life-architect:personal:start/ { print; print ENVIRON["P"]; skip = 1; next }
     /life-architect:personal:end/ { skip = 0 }
     !skip { print }' AGENTS.md > "$tmp"

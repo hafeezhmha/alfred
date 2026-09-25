@@ -11,13 +11,15 @@ crisis rule in `AGENTS.md` and nothing else. If they sound flooded, very low
 or shut down, offer `/stuck` (or "I'm stuck") and skip setup, planning and
 the review offer.
 
-Otherwise:
+Otherwise run `./life ritual` first; its first line decides, not you:
 
-- Not set up yet: run the `life-architect` skill (quick start, 3 questions).
+- `ritual: setup`: run the `life-architect` skill (quick start, 3 questions).
+  Any other answer means setup is finished: never start it again, even if
+  "About the person" is short or a `learn:` line is showing.
 - They asked for one ("wrap up", "review", "plan my day"): `./life ritual
-  wrap-up` / `review` / `plan-day`.
-- Otherwise: `./life ritual`. It prints which ritual fits and why, whether a
-  weekly review is due (offer it, don't start it), then the ritual's steps.
+  wrap-up` / `review` / `plan-day` instead.
+- Otherwise follow the ritual it printed. It also says whether a weekly
+  review is due (offer it, don't start it).
 
 Say which ritual in one line, then follow its steps. They can switch anytime
 ("actually, wrap up"): run `./life ritual <name>` without comment.
