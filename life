@@ -75,7 +75,7 @@ q_resolve() { # one id or unique substring -> "key<TAB>index<TAB>line<TAB>text"
   c="$(printf '%s' "$m" | grep -c . || true)"
   [ "$c" = 1 ] && { printf '%s\n' "$m"; return; }
   [ "$c" = 0 ] && die "no item '$1' ($(q_ids_summary)). run: ./life queue"
-  die "'$1' matches $c items ($(printf '%s\n' "$m" | awk -F'\t' '{printf "%s%s%d", (NR > 1 ? ", " : ""), $1, $2}')). use an id"
+  die "'$1' matches $c items ($(printf '%s\n' "$m" | awk -F'\t' '{ sep = ", "; if (NR == 1) sep = ""; printf "%s%s%d", sep, $1, $2 }')). use an id"
 }
 
 q_apply() { # args: line:target:pos ...  (pos top|bottom). Removes those lines, reinserts them under target sections.
@@ -214,7 +214,8 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
   tmp="$(mktemp)"
   M="$mode" D="$TODAY" TP="$topic" ST="$stopped" EN="$energy" WK="$working" DN="$dones" awk '
     function out(   i, s) {
-      print "## " ENVIRON["D"] " — " (ENVIRON["TP"] != "" ? ENVIRON["TP"] : (tp != "" ? tp : "day")); print ""
+      hd = "day"; if (tp != "") hd = tp; if (ENVIRON["TP"] != "") hd = ENVIRON["TP"]
+      print "## " ENVIRON["D"] " — " hd; print ""
       if (ENVIRON["WK"] != "") wk = "Working on: " ENVIRON["WK"]
       if (wk != "") { print wk; print "" }
       nd = split(ENVIRON["DN"], dn, "\036"); for (i = 1; i <= nd; i++) if (dn[i] != "") done[++dc] = "- " dn[i]
@@ -387,7 +388,9 @@ cmd_status() {
     fence { next }
     /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/ { n++; if (n > 1) exit
       d = substr($0, 4, 10); tp = $0; sub(/^## [^ ]+ *(— *)?/, "", tp); ago = day(ENVIRON["T"]) - day(d)
-      printf "stopped: %s \"%s\" (%s)\n", d, tp, ago == 0 ? "today" : ago == 1 ? "yesterday" : ago " days ago"; next }
+      # plain if/else: macOS awk rejects chained ?: inside printf arguments
+      if (ago == 0) when = "today"; else if (ago == 1) when = "yesterday"; else when = ago " days ago"
+      printf "stopped: %s \"%s\" (%s)\n", d, tp, when; next }
     n == 1 && /^Stopped at:/ { f = 1; sub(/^Stopped at: */, ""); s = $0; next }
     n == 1 && /^Energy:/ { en = $0; sub(/^Energy: */, "", en); f = 0; next }
     n == 1 && /^[ \t]*$/ { f = 0; next }
