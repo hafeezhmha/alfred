@@ -92,11 +92,11 @@ appears after your first message instead of before it. Saying "hi" is enough.
 
 You open your agent. Before you've typed anything, it says something like:
 
-> Hi Sam,
-> you stopped at IAM video 5, at 12:40 ("Policies"); the practice quiz isn't started.
-> The council tax refund has been waiting 15 days.
+> Hi Kavya,
+> you stopped at `retry_test.go`, test case 3 of 5; the fixture needs a second merchant ID.
+> The HR broadband reimbursement has been waiting 23 days.
 >
-> **First step (2 min):** open the course and press play at 12:40.
+> **First step (2 min):** open `fixtures/merchants.json` and copy the second merchant ID.
 
 That's it. No dashboard. No streak. No red numbers. One door, already open.
 
@@ -131,7 +131,7 @@ single desktop notification each day:
 ./life nudge on 09:30
 ```
 
-> Life OS: One thing today: IAM video 5 from 12:40. Open your agent and say hi.
+> Life OS: One thing today: Retry tests from case 3. Open your agent and say hi.
 
 It only shows up on days you haven't opened Life OS yet. No counts, no "you
 missed", no second ping. Add `private` to keep your task off the lock screen,
@@ -175,7 +175,7 @@ type this.
 | `AGENTS.md` | The rules the agent follows with you, every session, in every agent. |
 | `CLAUDE.md` | Tiny pointer so Claude Code finds `AGENTS.md`. |
 | `.opencode/commands/` | Makes the same `/` commands work in OpenCode. |
-| `examples/sam/` | A filled-in example, so you can see what "set up" looks like. |
+| `examples/kavya/` | A filled-in example (a developer in Bangalore), so you can see what "set up" looks like. |
 
 </details>
 

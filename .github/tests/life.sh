@@ -9,11 +9,11 @@ PASS=0; FAIL=0
 days_ago() { date -d "$1 days ago" +%Y-%m-%d 2>/dev/null || date -v-"$1"d +%Y-%m-%d; }
 TODAY="$(date +%Y-%m-%d)"
 
-fresh() { # new sandbox with the template; "setup" also applies the Sam example
+fresh() { # new sandbox with the template; "setup" also applies the Kavya example
   T="$(mktemp -d)"
   cp -R "$REPO/life" "$REPO/AGENTS.md" "$REPO/CLAUDE.md" "$REPO/context.md" \
     "$REPO/current.md" "$REPO/queue.md" "$REPO/.life" "$REPO/.claude" "$REPO/areas" "$T/"
-  if [ "${1:-}" = setup ]; then rm "$T/.life/SETUP_NEEDED"; cp "$REPO"/examples/sam/*.md "$T/"; fi
+  if [ "${1:-}" = setup ]; then rm "$T/.life/SETUP_NEEDED"; cp "$REPO"/examples/kavya/*.md "$T/"; fi
   cd "$T" || exit 1
 }
 ok()   { PASS=$((PASS + 1)); }
@@ -31,9 +31,9 @@ out="$(./life check 2>&1)"; has "unset check" "$out" "all good"
 # --- status after setup
 fresh setup
 out="$(./life status 2>&1)"
-has "status stopped-at" "$out" "Stopped at: IAM video 5"
-has "status now" "$out" "IAM video 5 from 12:40"
-has "status inbox" "$out" "Inbox: 1 unsorted"
+has "status stopped-at" "$out" 'Stopped at: `retry_test.go`, test case 3'
+has "status now" "$out" "Retry tests from case 3"
+has "status inbox" "$out" "Inbox: 2 unsorted"
 has "status review none" "$out" "Weekly review: none yet"
 
 echo garbage > .life/last-weekly-review
@@ -66,7 +66,7 @@ fresh setup
 q="$(cat queue.md)"
 has "add keeps backslash" "$q" '- [ ] pay \n bill & "rent" 50% ('
 has "add joins lines" "$q" "- [ ] two lines ($TODAY)"
-has "add counted" "$(./life status)" "Inbox: 3 unsorted"
+has "add counted" "$(./life status)" "Inbox: 4 unsorted"
 
 printf '# Queue\n\n## Now\n\n## Inbox\n' > queue.md
 ./life add x >/dev/null; ./life add y >/dev/null
@@ -82,9 +82,9 @@ has "add without Inbox message" "$out" "No '## Inbox'"
 fresh setup
 crlf queue.md; crlf current.md
 out="$(./life status)"
-has "crlf stopped-at" "$out" "Stopped at: IAM video 5"
-has "crlf now" "$out" "IAM video 5 from 12:40"
-has "crlf inbox" "$out" "Inbox: 1 unsorted"
+has "crlf stopped-at" "$out" 'Stopped at: `retry_test.go`, test case 3'
+has "crlf now" "$out" "Retry tests from case 3"
+has "crlf inbox" "$out" "Inbox: 2 unsorted"
 ./life add crlf-item >/dev/null && has "crlf add" "$(cat queue.md)" "crlf-item" || bad "crlf add failed"
 
 # --- archive
@@ -138,7 +138,7 @@ has "archive keeps only entry" "$(cat current.md)" "## 2020-01-01"
 # --- start
 fresh setup
 out="$(./life start)"
-has "start has status" "$out" "Stopped at: IAM video 5"
+has "start has status" "$out" 'Stopped at: `retry_test.go`, test case 3'
 has "start has context" "$out" "=== context.md ==="
 lacks "start no adhd when off" "$out" "ADHD mode"
 touch .claude/.adhd-always
@@ -149,7 +149,7 @@ has "start adhd rules" "$out" "First line is the next action"
 # --- nudge (LIFE_NUDGE_DRY prints instead of notifying)
 fresh setup
 out="$(LIFE_NUDGE_DRY=1 ./life nudge)"
-has "nudge names first Now item" "$out" "One thing today: IAM video 5 from 12:40"
+has "nudge names first Now item" "$out" "One thing today: Retry tests from case 3"
 lacks "nudge no checkbox" "$out" "[ ]"
 ./life start >/dev/null
 out="$(LIFE_NUDGE_DRY=1 ./life nudge)"
@@ -157,7 +157,7 @@ out="$(LIFE_NUDGE_DRY=1 ./life nudge)"
 has "nudge test forces" "$(LIFE_NUDGE_DRY=1 ./life nudge test)" "One thing today"
 echo "09:30 private" > .life/nudge
 out="$(LIFE_NUDGE_DRY=1 ./life nudge test)"
-lacks "nudge private hides item" "$out" "IAM"
+lacks "nudge private hides item" "$out" "Retry"
 has "nudge private text" "$out" "Your one small step"
 
 fresh
