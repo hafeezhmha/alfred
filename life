@@ -31,7 +31,7 @@ waiting_age() { # append "(N days)" to lines holding a YYYY-MM-DD date; plain co
 cmd_status() {
   echo "=== Life OS · $(date '+%A %Y-%m-%d %H:%M') ==="
   if [ -f .life/SETUP_NEEDED ]; then
-    echo "Not set up yet. Type /life-architect (Claude Code, OpenCode) or say \"set up my life os\" (Codex)."
+    echo "Not set up yet. Type /life (Claude Code, OpenCode) or say \"set up my life os\" (Codex). About 3 minutes."
     [ -f .life/setup-progress.md ] && echo "Setup was paused; progress saved in .life/setup-progress.md."
     return 0
   fi
@@ -59,7 +59,14 @@ cmd_status() {
       if [ "$days" -ge 7 ]; then echo "Weekly review due (last one ${days} days ago)."; fi
     fi
   else
-    echo "Weekly review: none yet. Run /weekly-review when ready."
+    echo "Weekly review: none yet. Say \"weekly review\" (or /life) when ready."
+  fi
+  if [ -f .life/to-learn.md ]; then # setup learns the rest one question a day
+    asked="$(sed -n 's/^Last asked: *//p' .life/to-learn.md | tr -d '\r')"
+    if [ "$asked" != "$(date +%Y-%m-%d)" ]; then
+      next="$(grep -m1 '^- \[ \] ' .life/to-learn.md | sed 's/^- \[ \] //' | tr -d '\r' || true)"
+      [ -z "$next" ] || echo "Getting to know you (one question, end of session, skippable): $next"
+    fi
   fi
 }
 

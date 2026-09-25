@@ -2,7 +2,7 @@
 
 Every open loop, in one place, so your head doesn't have to hold them.
 Capture fast with `./life add "thing"` (it lands in Inbox). Sort later, in
-`/eod` or `/weekly-review`. The agent never deletes or ticks off an item you
+wrap-up or the weekly review. The agent never deletes or ticks off an item you
 haven't confirmed.
 
 If you move to a task app, replace this file with a pointer to it and say
@@ -12,7 +12,7 @@ which app is the source of truth.
 
 At most 3. What today is actually for.
 
-- [ ] Run `/life-architect` to set up Life OS
+- [ ] Type `/life` (or say "set up my life os") to set up Life OS, about 3 minutes
 
 ## Next
 

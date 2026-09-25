@@ -1,7 +1,7 @@
----
-description: Start the day. Pick 1–3 things for Now and name the first two-minute step.
-allowed-tools: Bash, Read, Edit
----
+# Ritual: start-day
+
+Reached through `/life` in the morning (or whenever their day starts), or plain
+words like "start my day".
 
 Get the person moving in under three minutes. Short replies, one question at a
 time if anything needs asking.
@@ -17,7 +17,10 @@ Read `queue.md` once, in full: you need Next, and you will edit Now.
 
 ## 2. One question: energy
 
-Ask: "Energy today: low, ok, or high?" (skip if they already said).
+Ask: "Energy today: low, ok, high, or can't today?" (skip if they already
+said). "Can't today" means rest: move today's Now to Next without comment,
+no first step, and say that resting counts. If it sounds like more than
+tired, the crisis rule in `AGENTS.md` comes first.
 
 ## 3. Propose Now
 
@@ -42,4 +45,6 @@ never delete). Do not touch `current.md` unless the topic changed.
 ## 5. First step
 
 End with ONE action for item 1 that takes under two minutes, e.g. "Open the
-tax folder and find last year's return." Nothing else after it.
+tax folder and find last year's return." If the item carries an if-then plan
+("when I sit down after chai, ..."), use their own words. Nothing else after
+it.

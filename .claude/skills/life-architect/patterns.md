@@ -10,7 +10,7 @@ honest trade-offs. None of these is required; drop whatever doesn't fit.
 |---|---|---|
 | `queue.md` in this repo | People who open the agent most days | Invisible if they don't open it |
 | Pointer to a task app (Todoist, Things, TickTick, Apple Reminders) | People who live on their phone | Agent can't see it unless connected; queue.md becomes a pointer |
-| WhatsApp "message yourself" chat for capture, swept into Inbox at `/eod` | People whose eyes live in WhatsApp (most of India) | The agent can't read WhatsApp; they paste new lines in at `/eod` |
+| WhatsApp "message yourself" chat for capture, swept into Inbox at wrap-up | People whose eyes live in WhatsApp (most of India) | The agent can't read WhatsApp; they paste new lines in at wrap-up |
 | Paper + weekly transcription | Tactile thinkers, screen-fatigued | Needs the weekly review to sync |
 | Calendar-only (time-block everything) | Time-blind people who trust alerts | Brittle when a day slips |
 
@@ -21,8 +21,8 @@ Rule of thumb: where their eyes already go wins over the "best" tool.
 | Ritual | 2-min version | Full version |
 |---|---|---|
 | Start day | "What's the one thing today?" | Pick 1–3 Now items, check calendar, check energy, first step |
-| End of day | "Where did I stop?" one line | Full `/eod` |
-| Weekly | Empty Inbox only | Full `/weekly-review` |
+| End of day | "Where did I stop?" one line | Full wrap-up (`/life` in the evening) |
+| Weekly | Empty Inbox only | Full weekly review |
 
 Start with the 2-minute version. Grow only if they ask.
 
@@ -38,7 +38,7 @@ Build from how their days actually run, not from a 9-to-5 default.
 
 - **Office days vs home days**: different days, different plans. Long-commute
   office days get 1 small Now item; home days carry the deep work.
-- **The commute**: good for podcasts, phone admin and the 2-minute `/eod`
+- **The commute**: good for podcasts, phone admin and the 2-minute wrap-up
   ("where did I stop?") on the ride home. Never plan deep work there.
 - **Late calls** (US or Europe teams): the next morning starts slow. Plan it
   that way instead of calling it a bad morning.
@@ -91,7 +91,7 @@ traits. Always offer; never impose.
   tasks before it, and name that as normal.
 - **Rejection sensitivity**: no scores, streaks or red overdue lists. Language
   stays neutral.
-- **Doom-pile days**: `/unstuck` exists for this.
+- **Doom-pile days**: `/stuck` exists for this.
 - **Dopamine menu**: a short personal list of quick, healthy resets
   (walk, song, shower, snack) to pick from instead of scrolling.
 

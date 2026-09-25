@@ -1,12 +1,14 @@
----
-description: End of day. Write where you stopped into current.md and sweep loose ends into the queue.
-allowed-tools: Bash, Read, Edit, Write
----
+# Ritual: eod
+
+Reached through `/life` in the evening, or plain words like "done for today".
 
 Close out the day so tomorrow-you starts with full context. Work from what
 actually happened, never from what was planned.
 
 ## 1. Gather, then ask once
+
+If anything today sounds like hopelessness rather than a bad day ("what's the
+point", wanting to disappear), follow the crisis rule in `AGENTS.md` first.
 
 ```bash
 date +%Y-%m-%d
@@ -17,7 +19,7 @@ Read the top entry of `current.md` and all of `queue.md`; you will edit both.
 No need to run `./life status`; those two reads cover it.
 
 Re-read this conversation for: what got done, what was decided, what was
-started and not finished, anything they said they're worried about. Then ask
+started and not finished, practical worries worth a queue item. Then ask
 ONE question, with your guess filled in so they can just say "yes":
 
 > "Where did you stop, and how was energy? My guess: stopped at <X>, energy
@@ -32,7 +34,9 @@ a new dated entry above. Match the shape at the top of `current.md`:
   of today can pick up: "halfway through the insurance form, page 3, need the
   policy number from the email from Ana" beats "made progress".
 - Record what was done, concretely. Small wins count and go in.
-- Record energy and anything that affected it.
+- Record energy and what affected it, in neutral words ("low after the
+  commute"). Feelings and personal details stay out: this file is committed
+  to git.
 - Keep it under about 15 lines. Detail belongs in `areas/<area>/`.
 
 ## 3. Sweep the queue
@@ -51,5 +55,11 @@ What you wrote, how many items went to Inbox, and one win from today in
 plain words. If nothing happened today, say that without judgment and write
 only a one-line entry if they want one.
 
-Optional: offer `git add -A && git commit -m "eod <date>"` so history is
-kept. Commit only on a yes.
+If the day went badly or they're being hard on themselves, before anything
+else: "Today was hard. Hard days happen to everyone who's trying. You'd go
+easy on a friend who had this day; you get the same." Write the entry plainly
+("Rough day. Did: ...") with no verdict on them.
+
+Optional: offer `git add current.md queue.md areas/ && git commit -m "eod
+<date>"` so history is kept. Never `git add -A`, never anything in
+`private/`. Commit only on a yes.

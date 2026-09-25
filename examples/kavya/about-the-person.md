@@ -13,10 +13,11 @@
 - **Home and work:** lives with parents; family time on Sunday is fixed.
   Shares the desk with Appa on weekday mornings. Laptop is sometimes seen by
   family, so the nudge is private.
-- **Rituals:** `/start-day` at 11:00 on WFH days, after chai. `/eod` as a
-  2-minute version on the metro home ("where did I stop?"). Weekly review on
+- **Rituals:** `/life` plans the day at 11:00 on WFH days, after chai, and
+  wraps up as a 2-minute version on the metro home ("where did I stop?"). Weekly review on
   Sunday with Rohan on call, 15 minutes max.
-- **Capture:** WhatsApp "message yourself". Sweep it into Inbox at `/eod`.
+- **Support:** see `private/support.md`.
+- **Capture:** WhatsApp "message yourself". Sweep it into Inbox at wrap-up.
 - **Nudge:** `./life nudge on 11:15 private`.
 - **Pages:** yes. Liked marking up the setup proposal; offer pages for the
   weekly review and big decisions.

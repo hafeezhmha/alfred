@@ -188,6 +188,18 @@ left="$(find "$T/home" -type f)"
 [ -z "$left" ] && ok || bad "nudge off removes schedule" "$left"
 [ ! -f .life/nudge ] && ok || bad "nudge off removes config"
 
+# --- getting to know you (setup learns the rest one question a day)
+fresh setup
+lacks "no to-learn, no line" "$(./life status)" "Getting to know you"
+cp .claude/skills/life-architect/to-learn.md .life/to-learn.md
+has "first topic due" "$(./life status)" "Getting to know you (one question, end of session, skippable): Energy:"
+sed -i.bak "s/^Last asked: .*/Last asked: $TODAY/" .life/to-learn.md
+lacks "asked today, quiet" "$(./life status)" "Getting to know you"
+sed -i.bak -e "s/^Last asked: .*/Last asked: $(days_ago 1)/" -e 's/^- \[ \] Energy/- [x] Energy/' .life/to-learn.md
+has "next topic after a tick" "$(./life status)" "skippable): Day shape"
+sed -i.bak 's/^- \[ \] /- [x] /' .life/to-learn.md
+lacks "all learned, quiet" "$(./life status)" "Getting to know you"
+
 # --- Claude Code hook runs the same command
 fresh
 hook="$(awk -F'"command": "' 'NF > 1 {sub(/",$/, "", $2); print $2}' .claude/settings.json | sed 's/\\"/"/g')"

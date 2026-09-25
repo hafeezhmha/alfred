@@ -1,7 +1,7 @@
 # ADHD mode (compact)
 
 Short form of `SKILL.md` in this folder, printed by `./life start` every
-session. Same rules; the full file has examples and applies on `/i-have-adhd`.
+session. Same rules; the full file has examples and loads on "adhd mode on".
 Keep the two in step when upstream changes.
 
 The reader has ADHD: small working memory, starting is the hardest step,

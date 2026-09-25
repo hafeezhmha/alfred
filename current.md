@@ -25,6 +25,6 @@ Working on: setting up Life OS.
 Done:
 - Cloned the template.
 
-Stopped at: run `/life-architect` to set it up.
+Stopped at: type `/life` (or say "set up my life os") to set it up.
 
 Next: see queue.md.

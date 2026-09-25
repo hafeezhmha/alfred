@@ -1,7 +1,6 @@
----
-description: Weekly review, about 20 minutes. Empty the inbox, check each area, pick next week's focus.
-allowed-tools: Bash, Read, Edit, Write
----
+# Ritual: weekly review
+
+Reached through `/life` when a review is due, or "weekly review".
 
 Run a calm, short review. Show progress at the top of every message, e.g.
 `Weekly review · step 2 of 5 · ~12 min left`. If their notes say "pages:
@@ -26,18 +25,34 @@ correct one. Move only what they confirm.
 For each `areas/<area>/README.md`, one line: still the right focus? Anything
 stuck? Skip areas they don't want to look at this week, without comment.
 
+Then one question on load: "How full was the tank this week? Social,
+sensory, masking, family: light, ok, or heavy?" If it's heavy two weeks
+running, plan next week lighter: fewer Now items, one optional thing
+cancelled or moved. Never "push through". If they also describe exhaustion
+that rest doesn't fix, or skills slipping away: "That sounds really heavy. A
+doctor or counsellor can help work out what's going on." No labels. If it
+sounds like hopelessness, the crisis rule in `AGENTS.md` comes first.
+
 ## 4. Check the system (3 min)
 
 Ask one question: "Anything in this system you're ignoring or that feels like
 a chore?" If a ritual or area has been skipped for two weeks, offer to shrink,
 move, or drop it. If a nudge is on (`.life/nudge` exists) and they've been
-ignoring it, offer a new time or `./life nudge off`. Offer one small refresh if things feel stale (novelty
-matters).
+ignoring it, offer a new time or `./life nudge off`. Offer one small refresh
+if things feel stale (novelty matters).
 
 ## 5. Next week (3 min)
 
 Pick at most 3 focus items for next week and note fixed commitments that
-change the shape of the week. Clear "Done this week" into a new
+change the shape of the week. One check: "Does this point at what matters to
+you, or only at what's loud?" Adjust if they want.
+
+If `private/therapy-notes.md` has lines dated this week (`- YYYY-MM-DD:`),
+say only how many ("2 things noted for your therapist") and move on. Never
+read them out or interpret them, and skip the count entirely if their notes
+say their screen is seen by others.
+
+Clear "Done this week" into a new
 `## YYYY-MM-DD — Weekly review` entry at the top of `current.md` (wins, next
 week's focus). Then run:
 

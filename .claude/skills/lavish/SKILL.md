@@ -5,6 +5,7 @@ license: MIT
 metadata:
   author: Kun Chen (kunchenguid)
   argument-hint: <what the artifact should show>
+user-invocable: false
 ---
 
 # Lavish Editor (optional)

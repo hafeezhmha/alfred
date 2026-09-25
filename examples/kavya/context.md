@@ -50,7 +50,7 @@ case at work, and not dropping the small admin things.
 | Tool | Used for | Source of truth? |
 |---|---|---|
 | This repo | Where I stopped, open loops, area notes | yes |
-| WhatsApp, "message yourself" chat | Capture on the go | no, swept into Inbox at /eod |
+| WhatsApp, "message yourself" chat | Capture on the go | no, swept into Inbox at wrap-up |
 | Google Calendar | Office days, calls, wedding dates | yes, for times |
 
 ## How my brain works

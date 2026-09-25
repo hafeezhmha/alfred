@@ -10,7 +10,11 @@ checked against this list. If a change fails one, it needs a very good reason.
 - **One next step.** Every flow still ends in one concrete action doable in
   under two minutes.
 - **Starting stays cheap.** No new setup, no new daily chore, no new place to
-  check. A 2-minute version beats a 20-minute one.
+  check. A 2-minute version beats a 20-minute one. Setup stays at three
+  questions; anything else is learned one question a day.
+- **Few doors.** Three commands: `/life`, `/stuck`, `/grill-me`. New
+  behaviour goes behind one of them, or behind plain words, as a ritual in
+  `.claude/rituals/`. Never add a fourth command without removing one.
 - **No shame, no scoreboards.** No streaks, scores, red "overdue" lists or
   "you missed" framing. Counts are neutral ("waiting 15 days"), never
   reproachful. Missed days restart from today.
@@ -25,6 +29,10 @@ checked against this list. If a change fails one, it needs a very good reason.
   emoji or symbols a screen reader will read aloud.
 - **Safety beats flow.** Crisis rules, "never act outward without a yes" and
   "never delete without a yes" are never softened for convenience.
+- **Skills, not therapy.** Emotional features use small skills with research
+  behind them (DBT, ACT, CBT, self-compassion, behavioural activation), stay
+  in the present, never diagnose, and never go into memories or trauma. Say
+  honestly when evidence is thin.
 
 ## The engineering checklist
 

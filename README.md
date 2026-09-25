@@ -27,9 +27,10 @@ Plain text you own. Nothing to install but the agent.
 
 > [!TIP]
 > **Short on time or focus? Read only this box.**
-> Make a private copy, open it in Claude Code, type `/life-architect`.
-> It interviews you (about 20 minutes, pausable) and builds the rest.
-> Every session after that opens with where you stopped and one tiny next step.
+> Make a private copy, open it in Claude Code, type `/life`.
+> Three questions, about three minutes, and it works. It learns the rest one
+> small question a day. Every session opens with where you stopped and one
+> tiny next step.
 
 ---
 
@@ -47,19 +48,21 @@ Life OS was built with ADHD, autistic and otherwise neurodivergent brains in
 mind from the first line. It works for everyone else too; they just get fewer
 of the jokes.
 
-## Start here (3 steps, about 20 minutes)
+## Start here (about 3 minutes)
 
 1. **Make your own copy.** On GitHub, click "Use this template". Set it to
    **private**: it will hold your life. Clone it.
 2. **Open it.** In a terminal: `cd life-os && claude`
-3. **Type `/life-architect`.** It asks a few questions at a time, each with an
-   answer you can just accept, then writes your files for you.
+3. **Type `/life`.** Three questions: what to call you, one thing that keeps
+   slipping, and whether you'd like ADHD-shaped replies. That's setup.
 
-You can say "pause" at any point. It saves and picks up later.
+No 30-minute interview before anything works. Over the next couple of weeks
+it asks one small question at the end of a session (energy, people, your
+week), always skippable, and fills in your life map as it goes.
 
-Rather click than type? When setup has a proposal ready, it can open it as a
-page in your browser: each choice is a card with a suggestion already picked,
-and you mark up what to change. (Needs Node.js. Text works just as well.)
+Prefer to do it all in one sitting? Say "full setup" any time: a guided
+interview, pausable, and it can show its proposal as a page you click
+through and mark up. (Pages need Node.js. Text works just as well.)
 
 <details>
 <summary><b>Using OpenCode or Codex instead?</b> (same system, one small difference)</summary>
@@ -69,10 +72,9 @@ and you mark up what to change. (Needs Node.js. Text works just as well.)
 All three agents read the same `AGENTS.md` and start every session with one
 call to `./life start`, so nothing gets loaded twice.
 
-- **OpenCode:** `cd life-os && opencode`, then `/life-architect`.
+- **OpenCode:** `cd life-os && opencode`, then `/life`.
 - **Codex:** `cd life-os && codex`, then say "set up my life os". Codex has no
-  `/` commands here, so ask in plain words: "start my day", "wrap up",
-  "weekly review", "I'm stuck", "grill me on this".
+  `/` commands here, so just say it: "plan my day", "wrap up", "I'm stuck".
 
 The one difference: neither has a start-of-session hook, so your status
 appears after your first message instead of before it. Saying "hi" is enough.
@@ -106,17 +108,15 @@ That's it. No dashboard. No streak. No red numbers. One door, already open.
 
 ## The spells
 
-Type these in Claude Code or OpenCode (or say them in plain words in Codex).
+Only three to remember. Or none: plain words work too, in every agent.
 
-| Say | When | What happens |
+| Type | Or just say | What happens |
 |---|---|---|
-| `/start-day` | the day begins | Asks your energy, picks 1 to 3 things, names the first two-minute step. |
-| `/eod` | the day ends | Writes down exactly where you stopped, so tomorrow-you doesn't have to remember. |
-| `/unstuck` | frozen, overwhelmed, avoiding | Finds what's blocking you and shrinks the step until you can start. |
-| `/weekly-review` | once a week, ~20 min | Wins first, then empty the inbox, check your areas, pick next week's focus. |
-| `/grill-me` | before a big decision | Asks the questions you'd rather skip, until the decision is actually settled. |
-| `/life-architect` | first run, or life changed | The setup interview. Run it again whenever things shift. |
-| `/i-have-adhd` | anytime | Shapes every reply for an ADHD brain. Setup can make it always on. |
+| `/life` | "plan my day", "wrap up", "weekly review" | Whatever fits right now. Morning: asks your energy, picks 1 to 3 things, names a two-minute first step. Evening: writes down exactly where you stopped. Once a week: a review, 2-minute version first. |
+| `/stuck` | "I'm stuck", "I'm overwhelmed" | One question: is it the task, or the feelings? Then the right help: shrink the step until you can start, or pause, settle and pick one small thing. Every step skippable. |
+| `/grill-me` | "grill me on this" | Asks the questions you'd rather skip, until a big decision is actually settled. |
+
+"adhd mode on" and "stop adhd mode" work anytime too.
 
 And one from the terminal, for the thought that arrives mid-shower:
 
@@ -156,6 +156,12 @@ type this.
 - **Energy before time.** Hard things go where your brain is actually sharp.
 - **Built around you.** The setup asks how your brain works and what killed
   your last five systems, then designs against exactly that.
+- **Skills, not therapy.** When feelings run the show, it offers small,
+  well-researched skills (from DBT, ACT and self-compassion work) and stays
+  in the present. If you have a therapist, their plan comes first, and it
+  can keep a private list of things to bring to them. Like talking in parts
+  ("a part of me doesn't want to")? It can too, gently, the IFS way, with
+  the names you already use.
 - **Your call, always.** It suggests with options; you decide. It never sends,
   books, buys or deletes anything without your yes, each time.
 - **It's yours.** Plain markdown in a git repo. Switch agents, or stop using
@@ -178,6 +184,7 @@ type this.
 | `private/` | Git-ignored. For anything you'd never want on a server. |
 | `AGENTS.md` | The rules the agent follows with you, every session, in every agent. |
 | `CLAUDE.md` | Tiny pointer so Claude Code finds `AGENTS.md`. |
+| `.claude/` | The three commands, the rituals they run (`rituals/`), and the skills behind them. |
 | `.opencode/commands/` | Makes the same `/` commands work in OpenCode. |
 | `examples/kavya/` | A filled-in example (a developer in Bangalore), so you can see what "set up" looks like. |
 
@@ -217,7 +224,7 @@ out to be very good at picking up a person.
 | Task tracker | `queue.md`, or a pointer to Todoist, Notion, etc. |
 | Launcher `status` | `./life start` at session start |
 | Grill before building a feature | Grill before a big life decision |
-| End-of-day handoff | `/eod` |
+| End-of-day handoff | Wrap-up (`/life` in the evening) |
 | Never touch prod without approval | Never send, book, buy or delete without your OK |
 
 </details>
@@ -234,7 +241,7 @@ written down if you agree.
 ## Sharing with friends
 
 Share **this template**, never your filled-in copy. Each friend makes their own
-copy and runs `/life-architect`; nothing of yours travels with it.
+copy and types `/life`; nothing of yours travels with it.
 
 ## Not therapy
 

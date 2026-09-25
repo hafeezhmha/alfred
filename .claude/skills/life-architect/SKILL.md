@@ -1,7 +1,8 @@
 ---
 name: life-architect
-description: Set up or re-tune this Life OS through a guided interview. Learns how the person's life and brain work, explains the benefits, proposes a personal system with alternatives, then writes context.md, current.md, queue.md, areas/ and the personal section of AGENTS.md. Use on first run (when .life/SETUP_NEEDED exists), when the person says "set up my life os", "re-tune", "my life changed", or invokes /life-architect.
+description: Set up or re-tune this Life OS. Default is a 3-minute quick start that learns the rest one question a day; a full interview is available. Writes context.md, current.md, queue.md, areas/ and the personal section of AGENTS.md. Use on first run (when .life/SETUP_NEEDED exists), when the person says "set up my life os", "full setup", "resume setup", "re-tune" or "my life changed".
 argument-hint: "[quick | full | area <name> | retune]"
+user-invocable: false
 ---
 
 # Life Architect
@@ -24,12 +25,65 @@ Reference files in this folder, load when needed:
 
 $ARGUMENTS
 
-- empty or `full`: whole interview, about 30–45 minutes, pausable.
-- `quick`: minimum viable setup in about 15 minutes. Phases 1, 2, 5, 6 only,
-  two areas max. Offer `full` later.
+- empty or `quick` (the default for a fresh setup): **Quick start** below,
+  about 3 minutes. The rest is learned over time.
+- `full` ("full setup"): the whole interview in one sitting, Phases 0–7,
+  about 30–45 minutes, pausable. Some people, often autistic people, prefer
+  one structured session; offer it, never push it.
 - `area <name>`: add or redesign one area. Phases 4–6 scoped to that area.
 - `retune`: the system exists. Read all files, ask what is working and what
   is not, then change only what needs changing.
+
+## Quick start (default, about 3 minutes)
+
+Asking a neurodivergent person for 30 minutes of setup before anything works
+is the problem this system exists to solve. So: three questions, a working
+system, and the rest learned a little at a time.
+
+1. **Welcome, 3 lines:** what it does (you stop being the memory; every
+   session starts with one small step), "three questions, about three
+   minutes; I'll learn the rest a little at a time", and privacy in one line
+   (keep the repo private; skip anything).
+2. **One round of three**, each with a suggested answer:
+   1. What should I call you?
+   2. What's one thing that keeps slipping, or is on your mind right now?
+   3. Want replies shaped for an ADHD brain (next step first, short,
+      numbered)? a) yes b) no c) try it for a week
+3. **Build**, saying in one line what you're writing:
+   - `context.md`: their name in "Who this is", Updated: today. Every other
+     section says "Not known yet." with its placeholder rows deleted.
+   - `queue.md`: their one thing in Now, as a two-minute first step if you
+     can; remove the setup item.
+   - `current.md`: replace the install entry with today's "Life OS started"
+     entry; Stopped at = that first step.
+   - `AGENTS.md` "About the person": name, ADHD mode on or off, and "Still
+     learning; topics in `.life/to-learn.md`."
+   - `.claude/.adhd-always` for a or c.
+   - `cp .claude/skills/life-architect/to-learn.md .life/to-learn.md`
+   - Delete `.life/SETUP_NEEDED`, run `./life reviewed`, run `./life check`.
+4. **Hand off, 3 lines:** what exists now, what tomorrow looks like ("type
+   `/life` or just say hi"), and the first two-minute step. Add: "Rather do
+   it all at once? Say 'full setup' any time."
+
+## Getting to know them over time
+
+`./life start` prints the next topic from `.life/to-learn.md` when one is due
+(not yet asked today). Ask it only at the end of a session, after the main
+thing is done. Never in a session that used `/stuck`, on a rough day, or when
+they're in a hurry; just skip it that day.
+
+- One question, framed "Quick one, skip anytime:", with a suggested answer
+  or a pick, using the matching Phase 1–4 guidance below.
+- Write the answer where it belongs (`context.md`, `areas/`, "About the
+  person", `private/support.md`), tick the topic `- [x]`, and set
+  `Last asked:` to today. Privacy: Support and Parts answers go only to
+  `private/support.md`. For Brain, Home and People, ask "OK to keep this in
+  the repo, or private?" and follow the Phase 6 privacy rule.
+- "Skip": add "(skipped)" to the line and set `Last asked:` to today.
+  Skipped twice: tick it and move on.
+- When related topics are in (energy plus day shape, say), offer the matching
+  Phase 5 piece as a small suggestion ("want planning to happen at 11:00 on
+  home days?"), with alternatives.
 
 ## How you interview
 
@@ -53,9 +107,9 @@ has ADHD.
    bullets and ask "Did I get that right?" Correct before building on it.
 7. **Pause anywhere.** If they say "pause", "later", or go quiet mid-setup,
    write everything settled so far to `.life/setup-progress.md` (phase
-   reached, answers, open questions) and tell them: "Saved. Say
-   `/life-architect` any time to resume." Resume from that file next time; do
-   not re-ask settled questions.
+   reached, answers, open questions) and tell them: "Saved. Say 'resume
+   setup' any time." Resume from that file next time; do not re-ask settled
+   questions.
 8. **Facts are yours, decisions are theirs.** Never ask something you can
    read in the repo.
 9. **Warm, plain, specific.** No jargon, no hype, no therapy-speak, no
@@ -69,7 +123,7 @@ has ADHD.
 Check state first: `.life/SETUP_NEEDED` (fresh), `.life/setup-progress.md`
 (resume), or neither (retune).
 
-For a fresh setup, open with what this does for them, in under 8 lines:
+For a full setup, open with what this does for them, in under 8 lines:
 
 - You stop being the memory: where you stopped and what's open live in files,
   and the agent tells you at the start of each session.
@@ -82,9 +136,7 @@ For a fresh setup, open with what this does for them, in under 8 lines:
 - It's plain text you own. Nothing locks you in.
 
 Then: privacy in one line (keep this repo private; `private/` is git-ignored;
-skip anything you don't want written down). Then offer the mode: quick (15
-min), full (30–45 min, pausable), or one area. Recommend quick if they seem
-low on time or energy, full otherwise.
+skip anything you don't want written down).
 
 ### Phase 1 — How your brain works (first, always)
 
@@ -100,6 +152,26 @@ Diagnosed, self-identified and "not sure, but this sounds like me" are all
 equally valid. Many people, in India especially, can't get or don't want a
 formal assessment, and some families don't talk about it. Never ask whether
 it's diagnosed, and never write "diagnosed" unless they said it.
+
+Support: "Do you see a therapist or counsellor? If yes, what kind (CBT, DBT,
+IFS...) and is there anything they want you practising?" Optional, never
+pushed. Write the details to `private/support.md` (git-ignored; create it),
+never to `AGENTS.md`, which only says "Support: see private/support.md".
+Their therapist's skills come first in `/stuck`. Backing their plan never
+means doing the therapy part yourself: parts talk stays within the parts
+rule in `AGENTS.md`, even if they're in IFS therapy, and deeper work waits
+for the therapist. If they have no therapist and want options: Tele-MANAS 14416
+(free), NIMHANS, or college and NGO clinics with lower fees.
+
+Parts (optional, two questions, never pushed):
+- "Do you like talking in parts, like 'a part of me doesn't want to'?"
+  a) yes b) sometimes c) no, sounds odd. Record "Parts language: yes /
+  sometimes / no" in "About the person". "No" means use other framings.
+- If they do IFS or already know their parts: "Want me to know the parts
+  you work with, by the names you use?" Write only protectors (the critic,
+  the planner, the one who avoids) under "Parts I know" in
+  `private/support.md`. A young or hurt part gets one line under "For my
+  therapist only, never addressed", and is never engaged, even by name.
 
 Language: many people think in a mix (English with Hindi, Kannada, Tamil and
 so on, the way they'd text a friend). Offer to mirror that. Files stay in
@@ -164,8 +236,8 @@ trade-offs, drawn from `patterns.md` and tuned to what you learned:
 1. **Areas**: which areas get folders (3–5 is plenty to start).
 2. **Queue**: `queue.md`, or a pointer to a task app they already open daily,
    or paper + weekly transcription. Where their eyes already go wins.
-3. **Rituals**: which of `/start-day`, `/eod`, `/weekly-review` they want, and
-   how small. A 2-minute version they do beats a 20-minute one they skip.
+3. **Rituals**: which parts of `/life` they want (planning the day, wrapping
+   up, the weekly review), and how small. A 2-minute version they do beats a 20-minute one they skip.
    Place them in their real day: after the commute, after the late call,
    not at a default 9am.
 4. **Anchors**: when each ritual happens, attached to something they already
@@ -212,11 +284,13 @@ Only after an explicit yes. Then write:
 5. `AGENTS.md` — replace only the block between
    `<!-- life-architect:personal:start -->` and `…:end -->` with an "About the
    person" section: name, how to talk to them (tone and language mix), brain
-   notes, energy pattern, home and work shape, ritual choices, personal rules,
-   things never to suggest.
+   notes, energy pattern, home and work shape, "Support: see
+   private/support.md" if they shared any, ritual choices and times,
+   personal rules, things never to suggest.
 6. ADHD flag: create `.claude/.adhd-always` if they said yes; delete it if
    they said no.
-7. Delete `.life/SETUP_NEEDED` and `.life/setup-progress.md`.
+7. Delete `.life/SETUP_NEEDED`, `.life/setup-progress.md` and
+   `.life/to-learn.md` (a full setup covers it).
 8. If they chose a nudge: `./life nudge on HH:MM` (add `private` if chosen),
    then `./life nudge test` so they see one now. This changes their
    computer's scheduler, so say so and get a yes first.

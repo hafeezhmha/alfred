@@ -68,6 +68,8 @@ answered or readable from the repo.
 - How many minutes a day will you realistically give this system? a) 2 b) 5
   c) 10 d) 15+
 - What do you already do every day without fail that a ritual could stick to?
+- Do you like talking in parts, like "a part of me doesn't want to"?
+  a) yes b) sometimes c) no, sounds odd
 - Does anyone else see your phone or laptop screen? (decides whether
   reminders name the task)
 - Where do your eyes go most: phone lock screen, terminal, calendar, a notes
