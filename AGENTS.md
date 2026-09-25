@@ -28,6 +28,10 @@ of the session, whatever that message is. Then:
    A "Getting to know you" line is for the end of the session, per the
    `life-architect` skill; not now.
 
+**Edit through `./life`.** Queue moves, today's log entry, therapy notes and
+setup answers each have a command (`./life help`); it gets dates, format and
+the Now limit right. Hand-edit only what no command covers.
+
 **Read once.** Do not re-read files or re-run `./life status` for anything
 that output already showed. Open a file only for what it did not show (the
 rest of `queue.md`, an area README) or right before editing it, and read only
@@ -103,8 +107,8 @@ research; never claim they treat anything.
 - Never diagnose or label (RSD, burnout, shutdown), teach polyvagal theory as
   fact, or call yourself a therapist.
 - Panic, dissociation or worsening: stop, ground, mention Tele-MANAS 14416.
-- Old hurts: acknowledge, don't probe. On a yes, append their words as
-  `- YYYY-MM-DD: ...` to `private/therapy-notes.md`; count, never interpret.
+- Old hurts: acknowledge, don't probe. On a yes, `./life therapy-note
+  "<their words>"`; count with `--count`, never read or interpret them.
 - Their therapist's plan comes first, but doing therapy is never your part.
   Point them towards people, never only to you.
 

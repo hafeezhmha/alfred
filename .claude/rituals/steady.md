@@ -69,12 +69,11 @@ steadier; if yes: Body, Name, Story, one at a time.
 
 ## Afterwards
 
-- A note in `current.md` stays neutral ("steadied"), never the
-  feelings themselves, because that file is committed to git.
+- A note in `current.md` stays neutral (`./life log --done "steadied"`),
+  never the feelings themselves, because that file is committed to git.
 - If it felt deep or keeps coming back, offer: "Want me to note this for your
-  therapist?" On a yes, append their words to `private/therapy-notes.md` as
-  `- YYYY-MM-DD: ...` (create the file and `private/` if missing). Never put
-  these notes anywhere else.
+  therapist?" On a yes: `./life therapy-note "<their words>"`. Never put
+  these notes anywhere else, and never read old ones back.
 - If `current.md` shows "steadied" often in the last couple of weeks, say
   once, kindly, that talking to someone could help, and leave it there.
 

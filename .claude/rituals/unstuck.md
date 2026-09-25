@@ -37,10 +37,10 @@ anything else.
    - h: ask one follow-up, then pick the closest move.
 4. Optional, only if they have room for it: turn the first step into an
    if-then plan tied to something they already do: "When I sit down after
-   chai, I'll open the tax folder." Offer to write it into the item in
-   `queue.md`, so `/life` can hand the cue back in the morning.
+   chai, I'll open the tax folder." On a yes, write it into the item's text
+   in `queue.md`, so planning can hand the cue back in the morning.
 5. Offer to stay with them: "Want me to check in in 10 minutes?" If yes, tell
    them to reply "done" or "still stuck" when the timer ends, and continue
    from there.
-6. When they start or finish, name it as a win in one line. Add it to "Done
-   this week" in `queue.md` if they finished.
+6. When they start or finish, name it as a win in one line. If they
+   finished and say yes: `./life done <id>`.

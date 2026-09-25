@@ -13,61 +13,406 @@ section() { # print the body of a "## <name>" section of a markdown file
   H="## $2" awk '{sub(/\r$/, "")} $0 == ENVIRON["H"] {f=1; next} /^## /{f=0} f' "$1" | sed '/^[[:space:]]*$/d'
 }
 
-waiting_age() { # append "(N days)" to lines holding a YYYY-MM-DD date; plain count, no judgment
-  T="$(date +%Y-%m-%d)" awk '
-    function day(s,   y, m, d) { # days since a fixed epoch, civil calendar
-      y = substr(s, 1, 4) + 0; m = substr(s, 6, 2) + 0; d = substr(s, 9, 2) + 0
-      if (m < 3) { y--; m += 12 }
-      return 365 * y + int(y / 4) - int(y / 100) + int(y / 400) + int((153 * (m - 3) + 2) / 5) + d
-    }
-    BEGIN { today = day(ENVIRON["T"]) }
-    match($0, /20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]/) {
-      n = today - day(substr($0, RSTART, 10))
-      if (n == 0) $0 = $0 " (today)"; else if (n == 1) $0 = $0 " (1 day)"; else if (n > 1) $0 = $0 " (" n " days)"
-    }
-    { print }'
+# Days since a fixed epoch (civil calendar), for awk. No `date -d`, so it runs on macOS.
+DAYFN='function day(s,   y, m, d) { y = substr(s, 1, 4) + 0; m = substr(s, 6, 2) + 0; d = substr(s, 9, 2) + 0
+  if (m < 3) { y--; m += 12 }
+  return 365 * y + int(y / 4) - int(y / 100) + int(y / 400) + int((153 * (m - 3) + 2) / 5) + d }'
+TODAY="$(date +%Y-%m-%d)"
+
+die() { echo "error: $*" >&2; exit 2; }
+
+# ---------- queue model ----------
+# Items are "- " lines under the known "## " sections of queue.md. Ids are the
+# section letter plus position (n1 = first Now item), recomputed on every call
+# and never stored, so hand edits always work.
+#   n Now · x Next · w Waiting on · i Inbox · s Someday · d Done this week
+QKEYS="n x w i s d"
+qname() { case "$1" in n) echo "Now";; x) echo "Next";; w) echo "Waiting on";; i) echo "Inbox";; s) echo "Someday";; d) echo "Done this week";; esac; }
+qkey() { case "$1" in now|n) echo n;; next|x) echo x;; waiting|wait|w) echo w;; inbox|i) echo i;; someday|s) echo s;; done|d) echo d;; *) return 1;; esac; }
+QKEYFN='function key(h) { if (h == "## Now") return "n"; if (h == "## Next") return "x"; if (h == "## Waiting on") return "w"
+  if (h == "## Inbox") return "i"; if (h == "## Someday") return "s"; if (h == "## Done this week") return "d"; return "" }'
+
+q_items() { # key<TAB>index<TAB>line<TAB>text, one row per item
+  awk "$QKEYFN"'
+    { sub(/\r$/, "") }
+    /^```/ { fence = !fence; next }
+    fence { next }
+    /^##? / { k = key($0); next }
+    k != "" && /^- / { t = $0; sub(/^- (\[[ xX]\] )?/, "", t); c[k]++; printf "%s\t%d\t%d\t%s\n", k, c[k], NR, t }
+  ' queue.md
 }
 
+q_count() { printf '%s\n' "$QITEMS" | awk -F'\t' -v k="$1" '$1 == k' | grep -c . || true; }
+
+q_list() { # print one section: header with count, then "id text" rows
+  k="$1"; n="$(q_count "$k")"; label="$(qname "$k" | tr 'A-Z ' 'a-z_')"
+  [ "$k" = n ] && head="now[$n/3]" || head="$label[$n]"
+  if [ "$n" = 0 ]; then echo "$head: none"; return; fi
+  if [ "$k" = w ]; then
+    echo "$head{id,days,item}:"
+    printf '%s\n' "$QITEMS" | T="$TODAY" awk -F'\t' -v k=w "$DAYFN"'
+      $1 == k { d = "-"; if (match($4, /20[0-9][0-9]-[01][0-9]-[0-3][0-9]/)) d = day(ENVIRON["T"]) - day(substr($4, RSTART, 10))
+                printf "  w%d %s %s\n", $2, d, $4 }'
+  else
+    echo "$head:"
+    printf '%s\n' "$QITEMS" | awk -F'\t' -v k="$k" '$1 == k { printf "  %s%d %s\n", k, $2, $4 }'
+  fi
+}
+
+q_load() { [ -f queue.md ] || die "queue.md is missing. run: ./life check"; QITEMS="$(q_items)"; }
+
+q_ids_summary() { # "now: n1-n2, next: x1-x3" for error messages
+  out=""; for k in $QKEYS; do c="$(q_count "$k")"; [ "$c" = 0 ] || { r="${k}1"; [ "$c" = 1 ] || r="$r-$k$c"; out="$out${out:+, }$(qname "$k" | tr 'A-Z' 'a-z'): $r"; }; done
+  echo "${out:-queue is empty}"
+}
+
+q_resolve() { # one id or unique substring -> "key<TAB>index<TAB>line<TAB>text"
+  case "$1" in
+    [nxwisd][0-9]|[nxwisd][0-9][0-9])
+      m="$(printf '%s\n' "$QITEMS" | awk -F'\t' -v k="${1%%[0-9]*}" -v n="${1#?}" '$1 == k && $2 == n')" ;;
+    *) m="$(printf '%s\n' "$QITEMS" | A="$1" awk -F'\t' 'index(tolower($4), tolower(ENVIRON["A"]))')" ;;
+  esac
+  c="$(printf '%s' "$m" | grep -c . || true)"
+  [ "$c" = 1 ] && { printf '%s\n' "$m"; return; }
+  [ "$c" = 0 ] && die "no item '$1' ($(q_ids_summary)). run: ./life queue"
+  die "'$1' matches $c items ($(printf '%s\n' "$m" | awk -F'\t' '{printf "%s%s%d", (NR > 1 ? ", " : ""), $1, $2}')). use an id"
+}
+
+q_apply() { # args: line:target:pos ...  (pos top|bottom). Removes those lines, reinserts them under target sections.
+  tmp="$(mktemp)"
+  L="$*" D="$TODAY" W="${WAIT_WHO:-}" awk "$QKEYFN"'
+    function fmt(t, k,   s) { s = t; sub(/\r$/, "", s); sub(/^- (\[[ xX]\] )?/, "", s)
+      if (k == "d") return "- [x] " s
+      if (k == "w") { if (ENVIRON["W"] != "") s = ENVIRON["W"] ": " s; if (s !~ /since 20[0-9][0-9]-/) s = s ", since " ENVIRON["D"]; return "- " s }
+      if (k == "s") return "- " s
+      return "- [ ] " s }
+    BEGIN { n = split(ENVIRON["L"], a, " ")
+            for (i = 1; i <= n; i++) { split(a[i], p, ":"); ln[i] = p[1]; tg[i] = p[2]; ps[i] = p[3]; mv[p[1]] = 1 } }
+    FNR == NR { raw = $0; sub(/\r$/, "", raw); cl[FNR] = raw; FNRMAX = FNR
+                if (raw ~ /^```/) fence = !fence
+                if (!fence && raw ~ /^##? /) { cur = key(raw); if (cur != "") { hdr[cur] = FNR; lastnb[cur] = FNR }; next }
+                if (cur != "" && !(FNR in mv)) {
+                  if (raw ~ /^- /) { if (!(cur in first)) first[cur] = FNR; lastitem[cur] = FNR }
+                  if (raw !~ /^[ \t]*$/) lastnb[cur] = FNR }
+                next }
+    FNR == 1 { for (i = 1; i <= n; i++) if (!(tg[i] in hdr)) { bad = 1; exit 3 }
+               for (k in hdr) { anchor[k] = (k in lastitem) ? lastitem[k] : lastnb[k]
+                 # an empty section: land after the blank line that follows its header or prose
+                 if (!(k in lastitem)) { nx = anchor[k] + 1; if (!(nx in mv) && cl[nx] ~ /^[ \t]*$/ && nx <= FNRMAX) anchor[k] = nx; else lead[k] = 1 } } }
+    { for (i = 1; i <= n; i++) if (ps[i] == "top" && (tg[i] in first) && first[tg[i]] == FNR) print fmt(cl[ln[i]], tg[i]) }
+    !(FNR in mv) { print }
+    { for (k in anchor) if (anchor[k] == FNR) { started = 0
+        for (i = 1; i <= n; i++) if (tg[i] == k && !(ps[i] == "top" && (k in first))) {
+          if (!started && (k in lead)) print ""
+          started = 1; print fmt(cl[ln[i]], k) }
+        if (started && cl[FNR + 1] ~ /^##? /) print "" } }
+  ' queue.md queue.md > "$tmp.raw" || { rm -f "$tmp" "$tmp.raw"; die "a target section is missing from queue.md. run: ./life check"; }
+  cat -s "$tmp.raw" > "$tmp"; rm -f "$tmp.raw"   # removed items can leave two blank lines in a row
+  mv "$tmp" queue.md
+}
+
+now_room() { # $1 = items arriving in Now, $2 = items leaving Now
+  have="$(q_count n)"; total=$(( have - $2 + $1 ))
+  [ "$total" -le 3 ] || die "Now is full ($have/3; this would make $total). make room first: ./life move n$have next"
+}
+
+cmd_queue() {
+  q_load
+  if [ -n "${1:-}" ] && [ "$1" != all ]; then k="$(qkey "$1")" || die "unknown section '$1' (now, next, waiting, inbox, someday, done, all)"; q_list "$k"; return; fi
+  for k in $QKEYS; do q_list "$k"; done
+  echo "next:"
+  echo "  ./life move <id...> <section>   e.g. ./life move i1 next"
+  echo "  ./life done <id...>             only after they confirm"
+}
+
+cmd_move() { # move <id...> <section>
+  [ $# -ge 2 ] || die 'usage: ./life move <id...> <section>   e.g. ./life move i1 i2 next'
+  eval "dest=\${$#}"; tk="$(qkey "$dest")" || die "unknown section '$dest' (now, next, waiting, inbox, someday, done)"
+  q_load; specs=""; seen=" "; msgs=""; in_now=0; out_now=0; i=1
+  while [ $i -lt $# ]; do
+    eval "arg=\${$i}"; r="$(q_resolve "$arg")"
+    k="$(printf '%s' "$r" | cut -f1)"; idx="$(printf '%s' "$r" | cut -f2)"; ln="$(printf '%s' "$r" | cut -f3)"; txt="$(printf '%s' "$r" | cut -f4)"
+    i=$((i + 1))
+    case "$seen" in *" $ln "*) continue;; esac; seen="$seen$ln "
+    if [ "$k" = "$tk" ]; then msgs="$msgs  ok: $k$idx already in $(qname "$tk"): $txt
+"; continue; fi
+    [ "$tk" = n ] && in_now=$((in_now + 1)); [ "$k" = n ] && out_now=$((out_now + 1))
+    specs="$specs $ln:$tk:bottom"; msgs="$msgs  ok: $k$idx -> $(qname "$tk"): $txt
+"
+  done
+  [ "$tk" = n ] && now_room "$in_now" "$out_now"
+  [ -z "$specs" ] || q_apply $specs
+  printf '%s' "$msgs"; q_load; q_list "$tk"
+}
+
+cmd_done() { [ $# -ge 1 ] || die 'usage: ./life done <id...>   (only after they confirm)'; cmd_move "$@" done; }
+
+cmd_wait() { # wait <id> ["who"]
+  [ $# -ge 1 ] || die 'usage: ./life wait <id> ["who"]   e.g. ./life wait x2 "Ana"'
+  WAIT_WHO="$(printf '%s' "${2:-}" | tr '\r\n\t:' '    ')" cmd_move "$1" waiting
+}
+
+cmd_plan() { # plan <id...>: Now becomes exactly these, in this order; the rest of Now goes to the top of Next
+  [ $# -ge 1 ] && [ $# -le 3 ] || die 'usage: ./life plan <id...>   1 to 3 items, e.g. ./life plan n1 x2'
+  q_load; specs=""; chosen=" "
+  for arg in "$@"; do
+    r="$(q_resolve "$arg")"; ln="$(printf '%s' "$r" | cut -f3)"
+    case "$chosen" in *" $ln "*) continue;; esac; chosen="$chosen$ln "
+  done
+  for ln in $(printf '%s\n' "$QITEMS" | awk -F'\t' '$1 == "n" { print $3 }'); do
+    case "$chosen" in *" $ln "*) ;; *) specs="$specs $ln:x:top";; esac
+  done
+  for ln in $chosen; do specs="$specs $ln:n:bottom"; done
+  q_apply $specs
+  mkdir -p .life; echo "$TODAY" > .life/last-plan
+  echo "ok: Now planned for $TODAY"; q_load; q_list n
+  echo "next:"
+  echo "  name ONE first step for n1, under two minutes"
+}
+
+cmd_add() { # add "text" [--now|--next]
+  where=i
+  case "${1:-}" in --now) where=n; shift;; --next) where=x; shift;; esac
+  case "${!#:-}" in --now) where=n; set -- "${@:1:$(($#-1))}";; --next) where=x; set -- "${@:1:$(($#-1))}";; esac
+  [ $# -gt 0 ] || die 'usage: ./life add "thing to remember" [--now|--next]'
+  text="$(printf '%s' "$*" | tr '\r\n\t' '   ')"
+  if [ "$where" = n ]; then q_load; now_room 1 0; fi
+  line="- [ ] $text"; [ "$where" = i ] && line="$line ($TODAY)"
+  tmp="$(mktemp)"
+  # Passed via ENVIRON, not -v, so backslashes in the text stay literal.
+  L="$line" H="## $(qname "$where")" awk '
+    BEGIN { l = ENVIRON["L"] }
+    { h = $0; sub(/\r$/, "", h) }
+    h ~ /^## / { if (in_s && !done) { print l; print ""; done=1; blanks=0 } in_s = (h == ENVIRON["H"]) }
+    { if (in_s && h ~ /^[[:space:]]*$/) { blanks++; next }
+      while (blanks > 0) { print ""; blanks-- }
+      print }
+    END { if (in_s && !done) { print l; done=1 } if (!done) exit 3 }
+  ' queue.md > "$tmp" || { rm -f "$tmp"; die "no '## $(qname "$where")' section in queue.md; add one first."; }
+  mv "$tmp" queue.md
+  echo "Captured to $(qname "$where"): $text"
+}
+
+# ---------- log: today's current.md entry ----------
+cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--energy ..] [--new]
+  topic=""; stopped=""; energy=""; working=""; dones=""; new=0; has=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --topic|--stopped|--energy|--working|--done)
+        [ $# -ge 2 ] || die "$1 needs a value, e.g. $1 \"...\""
+        v="$(printf '%s' "$2" | tr '\r\n\t' '   ')"; has=1
+        case "$1" in --topic) topic="$v";; --stopped) stopped="$v";; --energy) energy="$v";; --working) working="$v";;
+          --done) dones="$dones$v"$'\036';; esac
+        shift 2 ;;
+      --new) new=1; shift ;;
+      *) die "unknown flag '$1'. flags: --stopped --topic --working --done --energy --new" ;;
+    esac
+  done
+  [ "$has" = 1 ] || die 'usage: ./life log --stopped "exact point" [--topic ..] [--done ..]... [--energy ..] [--new]'
+  top="$(awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/{print substr($0, 4, 10); exit}' current.md)"
+  mode=new; [ "$top" = "$TODAY" ] && [ "$new" = 0 ] && mode=merge
+  tmp="$(mktemp)"
+  M="$mode" D="$TODAY" TP="$topic" ST="$stopped" EN="$energy" WK="$working" DN="$dones" awk '
+    function out(   i, s) {
+      print "## " ENVIRON["D"] " — " (ENVIRON["TP"] != "" ? ENVIRON["TP"] : (tp != "" ? tp : "day")); print ""
+      if (ENVIRON["WK"] != "") wk = "Working on: " ENVIRON["WK"]
+      if (wk != "") { print wk; print "" }
+      nd = split(ENVIRON["DN"], dn, "\036"); for (i = 1; i <= nd; i++) if (dn[i] != "") done[++dc] = "- " dn[i]
+      if (dc) { print "Done:"; for (i = 1; i <= dc; i++) print done[i]; print "" }
+      if (ENVIRON["ST"] != "") st = "Stopped at: " ENVIRON["ST"]
+      if (st != "") { print st; print "" }
+      if (ENVIRON["EN"] != "") en = "Energy: " ENVIRON["EN"]
+      if (en != "") { print en; print "" }
+      for (i = 1; i <= xc; i++) { print extra[i]; s = 1 }
+      if (s) print ""
+      print "Next: see queue.md."; print "" }
+    { sub(/\r$/, "") }
+    /^```/ { fence = !fence }
+    !fence && /^## / {
+      if (state == "in") { out(); state = "after" }
+      if (state == "" && $0 ~ /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/) {
+        if (ENVIRON["M"] == "new") { out(); state = "after" }
+        else { state = "in"; tp = $0; sub(/^## [^ ]+ *(— *)?/, "", tp); next } } }
+    state == "in" {
+      if ($0 ~ /^Working on:/) { f = "wk"; wk = $0; next }
+      if ($0 ~ /^Done:/) { f = "dn"; next }
+      if ($0 ~ /^Stopped at:/) { f = "st"; st = $0; next }
+      if ($0 ~ /^Energy:/) { f = "en"; en = $0; next }
+      if ($0 ~ /^Next:/) { f = ""; next }
+      if ($0 ~ /^[ \t]*$/) { f = ""; next }
+      if (f == "dn" && $0 ~ /^- /) { done[++dc] = $0; next }
+      if (f == "wk") { wk = wk "\n" $0; next }
+      if (f == "st") { st = st "\n" $0; next }
+      if (f == "en") { en = en "\n" $0; next }
+      extra[++xc] = $0; next }
+    { print }
+    END { if (state == "in") out(); else if (state == "") { print ""; out() } }
+  ' current.md > "$tmp"
+  mv "$tmp" current.md
+  lines="$(awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | grep -c . || true)"
+  echo "ok: log $([ "$mode" = merge ] && echo "updated" || echo "added") for $TODAY"
+  awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | sed '/^$/d; s/^/  /'
+  [ "$lines" -le 15 ] || echo "note: today's entry is $lines lines; detail belongs in areas/<area>/README.md"
+  grep -q '^Stopped at:' <<EOF2 || echo "note: no \"Stopped at\" yet; add it at wrap-up: ./life log --stopped \"...\""
+$(awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md)
+EOF2
+}
+
+# ---------- private therapy notes ----------
+cmd_therapy_note() {
+  if [ "${1:-}" = --count ]; then echo "therapy_notes_this_week: $(therapy_count) (say only the number; never read them)"; return; fi
+  [ $# -ge 1 ] || die 'usage: ./life therapy-note "their words"   (only on their yes)'
+  if git rev-parse --git-dir >/dev/null 2>&1 && ! git check-ignore -q private/therapy-notes.md; then
+    die "private/ is not git-ignored here, so the note could be committed. add 'private/' to .gitignore first"
+  fi
+  mkdir -p private
+  printf -- '- %s: %s\n' "$TODAY" "$(printf '%s' "$*" | tr '\r\n\t' '   ')" >> private/therapy-notes.md
+  echo "ok: noted for their therapist (private/therapy-notes.md, not in git). Don't read other notes back."
+}
+
+therapy_count() { # notes dated in the last 7 days; count only, never content
+  [ -f private/therapy-notes.md ] || { echo 0; return; }
+  T="$TODAY" awk "$DAYFN"' BEGIN { t = day(ENVIRON["T"]) }
+    /^- 20[0-9][0-9]-[01][0-9]-[0-3][0-9]:/ { if (t - day(substr($0, 3, 10)) < 7) c++ } END { print c + 0 }' private/therapy-notes.md
+}
+
+# ---------- getting to know them (setup's one-question-a-day) ----------
+learn_dest() { # where an answer goes, by topic name
+  case "$1" in
+    Support|Parts) echo 'private/support.md ONLY (never a tracked file)' ;;
+    Brain|Home|People) echo 'ask "OK to keep this in the repo, or private?" then context.md or private/support.md' ;;
+    Energy) echo 'context.md "How my brain works"' ;;
+    "Day shape"|"Fixed commitments") echo 'context.md "Fixed commitments" and "Constraints"' ;;
+    Areas) echo 'context.md "Areas" + areas/<slug>/README.md from areas/_template.md' ;;
+    Capture) echo 'context.md "Tools"' ;;
+    "Past systems") echo 'context.md "How my brain works" (the pattern, not the story)' ;;
+    Language|"Never suggest") echo 'AGENTS.md "About the person"' ;;
+    Nudge) echo 'on a yes: ./life nudge on HH:MM [private]' ;;
+    *) echo 'wherever it fits; tracked files hold nothing sensitive' ;;
+  esac
+}
+
+learn_due() { # prints "tN<TAB>topic line" of the next open topic if one is due today
+  [ -f .life/to-learn.md ] || return 0
+  asked="$(sed -n 's/^Last asked: *//p' .life/to-learn.md | tr -d '\r')"
+  [ "$asked" = "$TODAY" ] && return 0
+  awk '{sub(/\r$/, "")} /^- \[[ xX]\] /{n++} /^- \[ \] /{sub(/^- \[ \] /, ""); printf "t%d\t%s\n", n, $0; exit}' .life/to-learn.md
+}
+
+cmd_learn() {
+  [ -f .life/to-learn.md ] || { echo "learn: none (setup has nothing left to ask)"; return; }
+  asked="$(sed -n 's/^Last asked: *//p' .life/to-learn.md | tr -d '\r')"
+  if [ "$asked" = "$TODAY" ]; then echo "learn: already asked today; next one tomorrow"; return; fi
+  r="$(learn_due)"; [ -n "$r" ] || { echo "learn: done (0 topics left)"; return; }
+  id="$(printf '%s' "$r" | cut -f1)"; line="$(printf '%s' "$r" | cut -f2)"; name="${line%%:*}"
+  echo "learn: $id $line"
+  echo "  ask: at the END of a session only, one question with a suggested answer, framed \"Quick one, skip anytime:\""
+  echo "  never: in a session that used /stuck, on a rough day, when they're in a hurry"
+  echo "  write: $(learn_dest "$name")"
+  echo "  guide: .claude/skills/life-architect/SKILL.md (the matching Phase 1-4 notes)"
+  echo "next:"
+  echo "  ./life learned $id          after writing the answer"
+  echo "  ./life learned $id --skip   if they skip"
+}
+
+cmd_learned() { # learned tN [--skip]
+  [ -f .life/to-learn.md ] || die "no .life/to-learn.md (nothing left to learn)"
+  case "${1:-}" in t[0-9]|t[0-9][0-9]) ;; *) die 'usage: ./life learned <tN> [--skip]   e.g. ./life learned t1';; esac
+  skip=0; [ "${2:-}" = --skip ] && skip=1
+  tmp="$(mktemp)"
+  N="${1#t}" S="$skip" D="$TODAY" awk '
+    { sub(/\r$/, "") }
+    /^Last asked:/ { $0 = "Last asked: " ENVIRON["D"] }
+    /^- \[[ xX]\] / { n++
+      if (n == ENVIRON["N"] + 0) { hit = 1
+        if (ENVIRON["S"] == 1 && $0 ~ /\(skipped\)$/) { sub(/^- \[ \] /, "- [x] "); sub(/\(skipped\)$/, "(skipped twice, dropped)"); res = "dropped after two skips" }
+        else if (ENVIRON["S"] == 1) { if ($0 !~ /\(skipped\)$/) $0 = $0 " (skipped)"; res = "skipped; it comes back another day" }
+        else { sub(/^- \[ \] /, "- [x] "); res = "learned" } } }
+    { print }
+    END { if (!hit) exit 3; print res > "/dev/stderr" }
+  ' .life/to-learn.md > "$tmp" 2>"$tmp.msg" || { rm -f "$tmp" "$tmp.msg"; die "no topic $1. run: ./life learn"; }
+  mv "$tmp" .life/to-learn.md
+  echo "ok: $1 $(cat "$tmp.msg"); next question tomorrow at the earliest"; rm -f "$tmp.msg"
+}
+
+# ---------- ritual: which one fits now ----------
+RITUALS=".claude/rituals"
+ritual_file() { case "$1" in plan-day|start-day) echo "$RITUALS/start-day.md";; wrap-up|eod) echo "$RITUALS/eod.md";;
+  review|weekly-review) echo "$RITUALS/weekly-review.md";; unstuck) echo "$RITUALS/unstuck.md";; steady) echo "$RITUALS/steady.md";; *) return 1;; esac; }
+
+review_days() { # days since the last weekly review, or "none"
+  if [ -f "$REVIEW_STAMP" ]; then last="$(tr -dc '0-9' < "$REVIEW_STAMP")"; [ -n "$last" ] && { echo $(( ( $(date +%s) - last ) / 86400 )); return; }; fi
+  echo none
+}
+
+ritual_pick() { # prints "name<TAB>reason"
+  if [ -f .life/SETUP_NEEDED ]; then printf 'setup\tnot set up yet\n'; return; fi
+  mid="$(cat .life/midpoint 2>/dev/null | tr -dc '0-9:' || true)"; [ -n "$mid" ] || mid="15:00"
+  nowm=$((10#$(date +%H) * 60 + 10#$(date +%M))); midm=$((10#${mid%:*} * 60 + 10#${mid#*:}))
+  planned=""; [ "$(cat .life/last-plan 2>/dev/null)" = "$TODAY" ] && planned=1
+  if [ "$nowm" -ge "$midm" ]; then printf 'wrap-up\tafter the midpoint (%s)\n' "$mid"
+  elif [ -n "$planned" ]; then printf 'plan-day\tbefore %s; Now already planned today, so confirm the first step or ./life ritual wrap-up\n' "$mid"
+  else printf 'plan-day\tbefore %s, Now not planned today\n' "$mid"; fi
+}
+
+cmd_ritual() {
+  if [ -n "${1:-}" ]; then name="$1"; reason="asked for"; ritual_file "$name" >/dev/null || die "unknown ritual '$1' (plan-day, wrap-up, review, unstuck, steady)"
+  else r="$(ritual_pick)"; name="$(printf '%s' "$r" | cut -f1)"; reason="$(printf '%s' "$r" | cut -f2)"; fi
+  if [ "$name" = setup ]; then
+    echo "ritual: setup (not set up yet)"
+    echo "next: run the life-architect skill, quick start (.claude/skills/life-architect/SKILL.md)"; return
+  fi
+  echo "ritual: $name ($reason)"
+  rd="$(review_days)"
+  if [ -z "${1:-}" ] && [ "$rd" != none ] && [ "$rd" -ge 7 ]; then
+    echo "review: due ($rd days). offer before starting: \"2-minute version now, the full one, or later?\" if yes: ./life ritual review"
+  fi
+  f="$(ritual_file "$name")"; echo "file: $f"; echo "---"; cat "$f"
+}
+
+# ---------- status and start ----------
 cmd_status() {
-  echo "=== Life OS · $(date '+%A %Y-%m-%d %H:%M') ==="
+  adhd=off; [ -f .claude/.adhd-always ] && adhd=on
+  echo "life: $(date '+%a %Y-%m-%d %H:%M') · adhd $adhd"
   if [ -f .life/SETUP_NEEDED ]; then
     echo "Not set up yet. Type /life (Claude Code, OpenCode) or say \"set up my life os\" (Codex). About 3 minutes."
-    [ -f .life/setup-progress.md ] && echo "Setup was paused; progress saved in .life/setup-progress.md."
+    [ -f .life/setup-progress.md ] && echo "setup: paused; progress saved in .life/setup-progress.md (offer to resume)"
+    echo "next:"
+    echo "  run the life-architect skill, quick start (3 questions)"
     return 0
   fi
-  echo
-  echo "--- Where you stopped (top of current.md) ---"
-  top="$(awk '{sub(/\r$/, "")} /^## 20[0-9][0-9]-/{n++} n==1' current.md 2>/dev/null || true)"
-  echo "${top:-(no dated entry in current.md yet)}"
-  echo
+  T="$TODAY" awk "$DAYFN"'
+    { sub(/\r$/, "") }
+    /^```/ { fence = !fence; next }
+    fence { next }
+    /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/ { n++; if (n > 1) exit
+      d = substr($0, 4, 10); tp = $0; sub(/^## [^ ]+ *(— *)?/, "", tp); ago = day(ENVIRON["T"]) - day(d)
+      printf "stopped: %s \"%s\" (%s)\n", d, tp, ago == 0 ? "today" : ago == 1 ? "yesterday" : ago " days ago"; next }
+    n == 1 && /^Stopped at:/ { f = 1; sub(/^Stopped at: */, ""); s = $0; next }
+    n == 1 && /^Energy:/ { en = $0; sub(/^Energy: */, "", en); f = 0; next }
+    n == 1 && /^[ \t]*$/ { f = 0; next }
+    n == 1 && f { s = s " " $0; next }
+    n == 1 && !/^(Working on|Done|Next):/ && !/^- / { other[++oc] = $0 }
+    END { if (!n) { print "stopped: none yet (no dated entry in current.md)"; exit }
+          if (s != "") print "  at: " s; else for (i = 1; i <= oc && i <= 3; i++) print "  " other[i]
+          if (en != "") print "  energy: " en }
+  ' current.md
   if grep -q '^# Queue' queue.md 2>/dev/null; then
-    echo "--- Now ---"
-    section queue.md "Now" | grep -v '^At most' || true
-    waiting="$(section queue.md "Waiting on" | grep '^- ' | waiting_age || true)"
-    if [ -n "$waiting" ]; then echo; echo "--- Waiting on ---"; echo "$waiting"; fi
-    inbox="$(section queue.md "Inbox" | grep -c '^- ' || true)"
-    echo
-    echo "Inbox: ${inbox:-0} unsorted"
+    q_load; q_list n
+    [ "$(q_count w)" = 0 ] || q_list w
+    echo "counts: next $(q_count x) · inbox $(q_count i) · someday $(q_count s) · done_this_week $(q_count d)"
   else
-    echo "--- Queue ---"
-    head -5 queue.md
+    echo "queue: queue.md is a pointer to another app:"; sed -n '1,5p' queue.md | sed 's/^/  /'
   fi
-  if [ -f "$REVIEW_STAMP" ]; then
-    last="$(tr -dc '0-9' < "$REVIEW_STAMP")"
-    if [ -n "$last" ]; then
-      days=$(( ( $(date +%s) - last ) / 86400 ))
-      if [ "$days" -ge 7 ]; then echo "Weekly review due (last one ${days} days ago)."; fi
-    fi
-  else
-    echo "Weekly review: none yet. Say \"weekly review\" (or /life) when ready."
-  fi
-  if [ -f .life/to-learn.md ]; then # setup learns the rest one question a day
-    asked="$(sed -n 's/^Last asked: *//p' .life/to-learn.md | tr -d '\r')"
-    if [ "$asked" != "$(date +%Y-%m-%d)" ]; then
-      next="$(grep -m1 '^- \[ \] ' .life/to-learn.md | sed 's/^- \[ \] //' | tr -d '\r' || true)"
-      [ -z "$next" ] || echo "Getting to know you (one question, end of session, skippable): $next"
-    fi
-  fi
+  rd="$(review_days)"
+  if [ "$rd" = none ]; then echo "review: none yet (offer when ready)"
+  elif [ "$rd" -ge 7 ]; then echo "review: due (last $rd days ago)"
+  else echo "review: not due (last $rd days ago)"; fi
+  lr="$(learn_due)"; [ -z "$lr" ] || echo "learn: $(printf '%s' "$lr" | cut -f1) \"$(printf '%s' "$lr" | cut -f2)\" (end of session only: ./life learn)"
+  rp="$(ritual_pick)"; echo "ritual: $(printf '%s' "$rp" | cut -f1) ($(printf '%s' "$rp" | cut -f2))"
+  echo "next:"
+  echo "  ./life ritual        steps for $(printf '%s' "$rp" | cut -f1)"
+  echo "  ./life queue         every item with ids"
 }
 
 cmd_start() { # the whole session-start read, in one call, for every agent
@@ -79,9 +424,8 @@ cmd_start() { # the whole session-start read, in one call, for every agent
   cmd_status
   [ -f .life/SETUP_NEEDED ] && return 0
   date +%Y-%m-%d > .life/last-start # a session happened today, so no nudge
-  echo
-  echo "=== context.md ==="
-  cat context.md
+  echo "context:"
+  awk '{sub(/\r$/, "")} /^## /{f=1} f' context.md | sed '/^$/d; s/^/  /'
 }
 
 NUDGE_CONF=".life/nudge"
@@ -162,24 +506,6 @@ cmd_nudge() {
   esac
 }
 
-cmd_add() {
-  [ $# -gt 0 ] || { echo 'usage: ./life add "thing to remember"'; exit 1; }
-  text="$(printf '%s' "$*" | tr '\r\n\t' '   ')"
-  tmp="$(mktemp)"
-  # Passed via ENVIRON, not -v, so backslashes in the text stay literal.
-  L="- [ ] $text ($(date +%Y-%m-%d))" awk '
-    BEGIN { l = ENVIRON["L"] }
-    { h = $0; sub(/\r$/, "", h) }
-    h ~ /^## / { if (inbox && !done) { print l; print ""; done=1; blanks=0 } inbox = (h == "## Inbox") }
-    { if (inbox && h ~ /^[[:space:]]*$/) { blanks++; next }
-      while (blanks > 0) { print ""; blanks-- }
-      print }
-    END { if (inbox && !done) { print l; done=1 } if (!done) exit 3 }
-  ' queue.md > "$tmp" || { rm -f "$tmp"; echo "No '## Inbox' section in queue.md; add one first."; exit 1; }
-  mv "$tmp" queue.md
-  echo "Captured to Inbox: $text"
-}
-
 cmd_reviewed() {
   mkdir -p .life
   date +%s > "$REVIEW_STAMP"
@@ -242,23 +568,57 @@ cmd_check() {
 case "${1:-status}" in
   status|"") cmd_status ;;
   start) cmd_start ;;
+  queue|q) shift; cmd_queue "$@" ;;
   add) shift; cmd_add "$@" ;;
+  move) shift; cmd_move "$@" ;;
+  now|next|someday|inbox)
+    k="$1"; shift
+    if [ $# = 0 ]; then cmd_queue "$k"; else cmd_move "$@" "$k"; fi ;;
+  done) shift; cmd_done "$@" ;;
+  wait) shift; cmd_wait "$@" ;;
+  plan) shift; cmd_plan "$@" ;;
+  log) shift; cmd_log "$@" ;;
+  therapy-note) shift; cmd_therapy_note "$@" ;;
+  ritual) shift; cmd_ritual "$@" ;;
+  learn) cmd_learn ;;
+  learned) shift; cmd_learned "$@" ;;
   reviewed) cmd_reviewed ;;
   archive) cmd_archive ;;
   check) cmd_check ;;
   nudge) shift; cmd_nudge "$@" ;;
   help|-h|--help)
     cat <<'HELP'
-./life status          where you stopped, today's Now, waiting-on, inbox count
-./life start           session start for agents: ADHD rules if on, status, context.md
-./life add "thing"     capture to the Inbox in queue.md
-./life reviewed        stamp the weekly review as done
-./life archive         move current.md entries older than 4 weeks to archive/
-./life check           find missing files and unfilled placeholders
-./life nudge on 09:30  daily desktop nudge, only on days you haven't opened Life OS
-                       (add "private" to hide your Now item; ./life nudge off stops it,
-                       ./life nudge test shows one now)
+life: plain-text life OS. Files are the truth; these commands read and edit them safely.
+Ids: n1 = first Now item (x Next, w Waiting on, i Inbox, s Someday, d Done this week).
+Any id can also be a unique quoted piece of the text: ./life done "passport".
+Errors go to stderr, exit 2, and say how to fix the call.
+
+read
+  ./life                          same as status
+  ./life start                    session start: ADHD rules if on, status, context.md
+  ./life status                   where they stopped, Now, waiting (days), counts, what's due
+  ./life queue [now|next|waiting|inbox|someday|done|all]   items with ids
+  ./life ritual [name]            which ritual fits now, then its steps (plan-day, wrap-up, review, unstuck, steady)
+  ./life learn                    the next getting-to-know-you question, if one is due
+queue (move/done/plan only after the person says yes)
+  ./life add "text" [--now|--next]    capture; default Inbox, dated
+  ./life move <id...> <section>       e.g. ./life move i1 i3 next   (Now holds at most 3)
+  ./life now|next|someday|inbox <id...>   shortcut for move
+  ./life done <id...>                 to Done this week
+  ./life wait <id> ["who"]            to Waiting on, dated "since"
+  ./life plan <id...>                 Now becomes exactly these (1-3); the rest of Now goes to top of Next
+log and notes
+  ./life log --stopped "exact point" [--topic ".."] [--working ".."] [--done ".."]... [--energy ".."] [--new]
+                                  write or update today's current.md entry; neutral words, no feelings
+  ./life therapy-note "their words"   private, dated, never read back (only on their yes)
+  ./life therapy-note --count         how many this week; the number only
+  ./life learned <tN> [--skip]        after asking a learn question
+upkeep
+  ./life reviewed                 stamp the weekly review done
+  ./life archive                  move current.md entries older than 4 weeks to archive/
+  ./life check                    missing files, unfilled placeholders
+  ./life nudge on HH:MM [private] | off | test    daily desktop nudge, only on days Life OS wasn't opened
 HELP
     ;;
-  *) echo "unknown command: $1 (try ./life help)"; exit 1 ;;
+  *) die "unknown command '$1'. run: ./life help" ;;
 esac

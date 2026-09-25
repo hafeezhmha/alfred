@@ -44,5 +44,9 @@ checked against this list. If a change fails one, it needs a very good reason.
   `AGENTS.md` or the start output: it is paid every session.
 - **Plain bash, portable.** `life` must run on macOS (bash 3.2, BSD awk) and
   Linux. No `date -d`, no gawk-only functions.
+- **Agent-first CLI (AXI).** File edits go through `./life` commands: compact
+  output, ids, a `next:` hint, errors on stderr with exit 2 that name the
+  fix. Markdown stays the source of truth; nothing is stored beside it. The
+  CLI never decides for the person, and crisis handling stays in prose.
 - **Tested.** Add a check to `.github/tests/life.sh` for any launcher change,
   and run `bash .github/tests/life.sh` before committing.

@@ -192,14 +192,22 @@ type this.
 
 <br>
 
+Built for AI agents first (the [AXI](https://axi.md/) idea): short, structured
+output, items with ids like `n1` or `x2`, and every answer ends with what to
+run next. The agent edits your files through it, so dates and formats come
+out right even with a smaller model. Your files stay plain markdown you can
+edit by hand.
+
 ```
-./life start      everything an agent needs at session start, in one go
-./life status     where you stopped, Now, Waiting on (with how many days), inbox count
-./life add "..."  capture a thought to the Inbox
-./life archive    move log entries older than 4 weeks into archive/
-./life reviewed   mark the weekly review done
-./life check      spot missing files or unfilled setup placeholders
-./life nudge      daily desktop nudge: on HH:MM [private], off, or test
+./life                 where you stopped, Now, waiting, what's due
+./life add "..."       capture a thought to the Inbox
+./life queue           everything, with ids
+./life done n1         mark done        ./life move i2 next   move things
+./life plan n1 x2      set today's Now  ./life wait x1 "Ana"  waiting on someone
+./life log --stopped "page 3 of the form"   today's "where I stopped"
+./life ritual          which ritual fits right now, and its steps
+./life nudge on 09:30  a daily desktop nudge
+./life help            everything else
 ```
 
 </details>
