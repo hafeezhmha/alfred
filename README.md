@@ -1,5 +1,3 @@
-<div align="center">
-
 ```
                     __
                _.-'` /
@@ -12,6 +10,8 @@
     /_.--'`
    /
 ```
+
+<div align="center">
 
 **Run by an AI agent, for brains that zig, zag, hyperfocus, freeze, forget,
 and start again.**

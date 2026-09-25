@@ -266,6 +266,7 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
   echo "ok: log $([ "$mode" = merge ] && echo "updated" || echo "added") for $TODAY"
   awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | sed '/^$/d; s/^/  /'
   [ "$lines" -le 15 ] || echo "note: today's entry is $lines lines; detail belongs in areas/<area>/README.md"
+  [ -z "$stopped" ] || [ -n "$said" ] || echo "note: no --said; add their exact words about where they stopped: ./life log --said \"...\""
   case "$energy" in ""|*" "*) ;; *) echo "note: energy \"$energy\" has no cause; add what affected it: ./life log --energy \"$energy, <what affected it>\"";; esac
   echo "next:"
   echo "  check the entry uses their words (\"got as far as\" is not \"done\"), one --done per win, energy with its cause"
@@ -392,6 +393,22 @@ cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by
   fi
   [ -t 1 ] && echo "gate: clear"
   return 0
+}
+
+# ---------- safety net: crisis language in what the person just sent ----------
+# A UserPromptSubmit hook (Claude Code and Codex) runs this on every message;
+# its stdout reaches the model before it replies. It adds to the written crisis
+# rule in AGENTS.md, never replaces it. OpenCode has no such hook.
+CRISIS_RE="what'?s the point|no point (in|of) (living|anything|life|going on|trying)|kill (myself|me)|suicid|end (it all|my life|things|everything)|want(ed)? to die|wanna die|better off (dead|without me)|(don'?t|do not) want to (be here|live|exist|wake up)|not wake up|disappear|burden|hopeless|hate myself|fail(ing)? at everything|hurt(ing)? myself|self[- ]?harm|cut(ting)? myself|can'?t go on|give up on (life|everything)|mar ja(na|un|unga|ungi)|marna chah|jeena nahi|jeene ka ma(n|nn) nahi|khud ko khatam"
+
+cmd_safety() {
+  input=""; if [ ! -t 0 ]; then while IFS= read -r -t 2 line; do input="$input$line"; done; input="$input${line:-}"; fi
+  [ -n "$input" ] || input="$*"
+  # shellcheck disable=SC1112  # the curly apostrophe is deliberate: "what’s the point" must match too
+  text="$(printf '%s' "$input" | sed 's/\\u2019/'"'"'/g; s/’/'"'"'/g' | tr 'A-Z' 'a-z')"
+  hit="$(printf '%s' "$text" | grep -Eo "$CRISIS_RE" | head -1 || true)"
+  [ -n "$hit" ] || return 0
+  echo "SAFETY CHECK (automatic, by keyword \"$hit\"): this message may carry crisis language. Before anything else, follow the crisis rule in AGENTS.md: stop the current task, respond with care, and if unsure ask plainly and kindly \"Are you having thoughts of ending your life?\". Include India's Tele-MANAS 14416 (free, 24/7) and 112 for immediate danger. Do not start a skill, a question menu or productivity talk first. If it is plainly not that (e.g. a button that disappears), ignore this note."
 }
 
 # ---------- ritual: which one fits now ----------
@@ -794,6 +811,7 @@ case "$CMD" in
   learned) shift; cmd_learned "$@" ;;
   pending) shift; cmd_pending "$@" ;;
   gate) cmd_gate ;;
+  safety) shift; cmd_safety "$@" ;;
   review) cmd_review ;;
   reviewed) shift; cmd_reviewed "$@" ;;
   setup) shift; cmd_setup "$@" ;;
@@ -834,6 +852,7 @@ setup and review
 rituals and the stop gate
   ./life pending [clear [item|all]]   the write a started ritual still owes (plan, log, reviewed)
   ./life gate                     exit 2 while a write is owed; the Stop hook in Claude Code and Codex. OpenCode: run it before finishing
+  ./life safety                   crisis-language net on the person's message; the UserPromptSubmit hook in Claude Code and Codex
 upkeep
   ./life reviewed                 (no flags) just stamp the review done
   ./life archive                  move current.md entries older than 4 weeks to archive/

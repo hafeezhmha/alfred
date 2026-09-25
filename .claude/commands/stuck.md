@@ -5,9 +5,14 @@ allowed-tools: Read, Edit, Write
 
 One door for any kind of stuck.
 
-**First:** if anything they've said sounds like crisis, including indirect
-signs ("what's the point", wanting to disappear, being a burden), follow the
-crisis rule in `AGENTS.md` now and nothing else.
+**First, before the question below:** hopelessness is not an ordinary
+stuck. If anything they've said sounds like crisis, including indirect signs
+("what's the point", "failing at everything", wanting to disappear, being a
+burden, "jeene ka mann nahi"), do NOT offer the task-or-feelings menu. Follow
+the crisis rule in `AGENTS.md` now: respond with care, ask plainly "Are you
+having thoughts of ending your life?", and give Tele-MANAS 14416 (free,
+24/7) and 112 for immediate danger. A `SAFETY CHECK` note in your context
+means the same.
 
 If they already said which kind, skip the question. Otherwise ask one, as a
 pick:

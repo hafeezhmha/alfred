@@ -399,6 +399,20 @@ hk="$(awk -F'"command": "' 'NF > 1 {sub(/",$/, "", $2); print $2}' .claude/setti
 has "Claude Code Stop hook runs the gate" "$hk" "./life gate"
 has "Codex Stop hook runs the gate" "$(cat "$REPO/.codex/hooks.json")" 'life\" gate'
 
+# --- safety net on what the person sends (UserPromptSubmit hook)
+fresh
+for m in "honestly what's the point of anything" "I just want to disappear" "everyone would be better off without me" \
+         "yaar jeene ka mann nahi karta" "I'm such a burden" "I keep failing at everything"; do
+  has "safety flags: $m" "$(printf '{"prompt":"%s"}' "$m" | ./life safety)" "Tele-MANAS 14416"
+done
+for m in "plan my day" "fix the bug in point() please" "what are the next steps"; do
+  [ -z "$(printf '{"prompt":"%s"}' "$m" | ./life safety)" ] && ok || bad "safety stays quiet: $m"
+done
+has "safety handles curly apostrophes" "$(printf '{"prompt":"what\u2019s the point"}' | ./life safety)" "SAFETY CHECK"
+has "Claude Code runs the safety net" "$(cat "$REPO/.claude/settings.json")" "./life safety"
+has "Codex runs the safety net" "$(cat "$REPO/.codex/hooks.json")" 'life\" safety'
+has "log asks for their words" "$(fresh setup; ./life log --stopped 'x')" "no --said"
+
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"
 out="$(./life frob 2>&1)"; rc=$?
