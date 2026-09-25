@@ -40,3 +40,10 @@ This repo holds personal data: health, money, relationships.
 - Write artifacts under `.lavish/` (git-ignored).
 - Set `LAVISH_AXI_HOST=127.0.0.1` if Tailscale or another VPN is up, so the
   review server stays loopback-only.
+- **Any agent**: feedback comes back through `npx -y lavish-axi poll <file>`
+  in the foreground. If the agent's command timeout kills it (Codex,
+  OpenCode), run it again; feedback stays queued.
+- **Design for the reader**: one job per page, one decision per card, your
+  recommendation preselected, short plain text, big click targets. Calm
+  colors; nothing red, no counts of what's undone. Life OS has no design
+  system, so use the CLI's default (Tailwind + DaisyUI) with a calm theme.

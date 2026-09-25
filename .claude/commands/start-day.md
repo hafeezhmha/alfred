@@ -24,6 +24,8 @@ Ask: "Energy today: low, ok, or high?" (skip if they already said).
 - low: 1 item, or one basic-care task. Say that counts as a full day.
 - ok: 2 items.
 - high: 3 items, hardest one in their peak focus window.
+- Office or long-commute day, or the morning after a late call (see
+  `context.md`): one size smaller, unless they say otherwise.
 
 Draw from yesterday's "Stopped at", then Now, then Next, then Waiting-on
 items that may have unblocked. A Waiting-on item that has sat a while (its

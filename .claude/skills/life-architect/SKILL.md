@@ -185,6 +185,16 @@ trade-offs, drawn from `patterns.md` and tuned to what you learned:
 Make the benefit concrete for them: "With this, when you open Claude on
 Monday it will tell you X and suggest Y."
 
+**Offer it as a page** (if `npx` exists): "Want to see this as a page you can
+click through and mark up? Or we keep going here." Clicking beats typing
+paragraphs, which is the biggest barrier in setup. On yes, use the `lavish`
+skill with its `input` playbook: one card per piece above, your
+recommendation preselected, alternatives one click away, a short note field
+on each. Wait for their feedback with `lavish-axi poll`, apply it, and
+confirm the result here in chat in 3–5 lines. On no, stay in text and don't
+offer pages again unless they ask. Record the answer ("pages: yes/no") in
+"About the person".
+
 Offer to `/grill-me` any part they're unsure about. Ask: "Build it like this?"
 Adjust until yes.
 
@@ -228,6 +238,10 @@ End with, in this order:
 - A 1-week trial framing: "Try it for 7 days. At the weekly review we'll cut
   whatever isn't earning its place."
 - ONE first action doable in under 2 minutes.
+
+If they said yes to pages, offer one more: a one-page map of their Life OS
+(areas, rituals and when, where capture goes, what happens on a bad day),
+saved in `.lavish/` to come back to. Offer once; skip if they're tired.
 
 If they want to share Life OS with friends: remind them to share the template
 repo, never their filled-in one.

@@ -4,7 +4,9 @@ allowed-tools: Bash, Read, Edit, Write
 ---
 
 Run a calm, short review. Show progress at the top of every message, e.g.
-`Weekly review · step 2 of 5 · ~12 min left`. If the person wants the
+`Weekly review · step 2 of 5 · ~12 min left`. If their notes say "pages:
+yes", offer once to show steps 1 and 3 as a page (`lavish`): wins and areas
+at a glance, marked up by clicking. If the person wants the
 2-minute version (or their AGENTS.md notes say so), do only step 2.
 
 ## 1. Wins first (2 min)

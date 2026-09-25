@@ -109,8 +109,11 @@ ADHD mode is on while `.claude/.adhd-always` exists; `./life start` prints its
 rules. Outside a session, `/i-have-adhd` (or "adhd mode on") loads
 `.claude/skills/i-have-adhd/SKILL.md` for one session.
 
-When a plan, review or comparison is clearer as a page, the optional `lavish`
-skill renders it locally. Never use its `share` command with personal data.
+When a plan, review, comparison or decision tree is clearer as a page, offer
+the optional `lavish` skill (a local page they can click and mark up). Offer,
+never open uninvited; skip it in `/start-day`, `/eod` and `/unstuck`, which
+must stay instant; respect "pages: no" in their notes. Never use its `share`
+command.
 
 ## Rituals
 

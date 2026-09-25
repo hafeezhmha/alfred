@@ -57,6 +57,10 @@ of the jokes.
 
 You can say "pause" at any point. It saves and picks up later.
 
+Rather click than type? When setup has a proposal ready, it can open it as a
+page in your browser: each choice is a card with a suggestion already picked,
+and you mark up what to change. (Needs Node.js. Text works just as well.)
+
 <details>
 <summary><b>Using OpenCode or Codex instead?</b> (same system, one small difference)</summary>
 

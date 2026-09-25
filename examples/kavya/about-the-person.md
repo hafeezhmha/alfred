@@ -18,4 +18,6 @@
   Sunday with Rohan on call, 15 minutes max.
 - **Capture:** WhatsApp "message yourself". Sweep it into Inbox at `/eod`.
 - **Nudge:** `./life nudge on 11:15 private`.
+- **Pages:** yes. Liked marking up the setup proposal; offer pages for the
+  weekly review and big decisions.
 - **Never suggest:** 5am routines, calorie tracking, "just say no to family".

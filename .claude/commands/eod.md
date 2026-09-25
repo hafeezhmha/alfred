@@ -38,6 +38,9 @@ a new dated entry above. Match the shape at the top of `current.md`:
 ## 3. Sweep the queue
 
 - Anything mentioned today but not done goes to Inbox.
+- If they capture somewhere else (WhatsApp "message yourself", a notes app),
+  ask once: "Anything new in your WhatsApp notes? Paste it." Each line goes
+  to Inbox. Skip if they say no.
 - Finished items: propose moving them to "Done this week". Move only what the
   person confirms.
 - Never delete an item.

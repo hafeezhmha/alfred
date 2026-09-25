@@ -36,6 +36,9 @@ The session is done when the frontier is empty: every branch of the design tree 
   settled · ~3 left`.
 - Life decisions have feelings attached. Ask about the feeling when it is a
   real input ("how would you feel telling your manager?"), not as therapy.
+- For a big, many-branched decision, and if their notes say "pages: yes",
+  offer once to draw the decision tree as a page (`lavish`, diagram
+  playbook): settled branches, open ones, and your recommendation on each.
 - When done, write the settled decision to the relevant
   `areas/<area>/README.md` under "Decisions", and follow-up actions to the
   Inbox in `queue.md`, before anyone acts.
