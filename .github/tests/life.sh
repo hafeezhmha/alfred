@@ -378,6 +378,10 @@ out="$(./life gate </dev/null 2>&1)"; rc=$?
 [ $rc = 2 ] && ok || bad "gate blocks while a write is owed" "$out"
 has "gate says how to finish or skip" "$out" "./life pending clear plan"
 printf '{"stop_hook_active": true}' | ./life gate >/dev/null 2>&1 && ok || bad "gate lets go after blocking once"
+printf '{"last_assistant_message": "Energy today: low, ok, high, or can\x27t today?"}' | ./life gate >/dev/null 2>&1 && ok || bad "gate lets a question wait for the person"
+printf '{"last_assistant_message": "Go with this?**\\n"}' | ./life gate >/dev/null 2>&1 && ok || bad "gate sees a question through markdown"
+out="$(printf '{"last_assistant_message": "Great, first step: open the site."}' | ./life gate 2>&1)"; rc=$?
+[ $rc = 2 ] && ok || bad "gate blocks a wrap-up that skipped the write" "$out"
 ./life plan n1 >/dev/null
 has "plan settles the owed write" "$(./life pending)" "pending: none"
 printf '{}' | ./life gate >/dev/null 2>&1 && ok || bad "gate clear after the write"

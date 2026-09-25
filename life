@@ -378,13 +378,16 @@ cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by
   input=""; if [ ! -t 0 ]; then while IFS= read -r -t 2 line; do input="$input$line"; done; input="$input${line:-}"; fi
   printf '%s' "$input" | grep -Eq '"stop_hook_active" *: *true' && return 0   # blocked once already: let it stop
   [ -f .life/SETUP_NEEDED ] && return 0
+  # the agent's last message (both agents send it); trailing markdown and spaces trimmed
+  last="$(printf '%s' "$input" | sed -nE 's/.*"last_assistant_message" *: *"(([^"\\]|\\.)*)".*/\1/p' | sed -E 's/(\\n|[[:space:]*_)"`])+$//')"
+  if printf '%s' "$last" | grep -Eqi 'anything else\?*$'; then
+    echo "Life OS: end with one concrete next step, not \"anything else?\". Rewrite your last line." >&2
+    exit 2
+  fi
+  case "$last" in *\?) return 0 ;; esac   # a question: waiting on the person, nothing is late yet
   p="$(pending_list | tr '\n' ' ' | sed 's/ $//')"
   if [ -n "$p" ]; then
     echo "Life OS: this ritual still owes a write ($p). If the person said yes, do it now with ./life (see ./life help). If they chose not to or want to stop, run: ./life pending clear $p. Then finish your reply." >&2
-    exit 2
-  fi
-  if printf '%s' "$input" | grep -Eqi '"last_assistant_message" *: *"[^"]*anything else'; then
-    echo "Life OS: end with one concrete next step, not \"anything else?\". Rewrite your last line." >&2
     exit 2
   fi
   [ -t 1 ] && echo "gate: clear"
