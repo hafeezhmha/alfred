@@ -1,0 +1,32 @@
+name: test
+
+on:
+  push:
+    paths: [life, .claude/settings.json, .claude/skills/i-have-adhd/always-on.md, .github/**]
+  pull_request:
+    paths: [life, .claude/settings.json, .claude/skills/i-have-adhd/always-on.md, .github/**]
+
+jobs:
+  life:
+    # Only in the template itself. Personal Life OS repos made from it inherit
+    # this file but should never spend their Actions minutes on it.
+    if: github.repository == 'hafeezhmha/life-os-template'
+    strategy:
+      matrix:
+        # macOS runs the launcher under BSD awk and bash 3.2, as a Mac user would.
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Launcher tests
+        run: bash .github/tests/life.sh
+      - name: Launcher tests under busybox awk
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y -qq busybox >/dev/null
+          mkdir -p "$RUNNER_TEMP/bb" && printf '#!/bin/sh\nexec busybox awk "$@"\n' > "$RUNNER_TEMP/bb/awk"
+          chmod +x "$RUNNER_TEMP/bb/awk"
+          PATH="$RUNNER_TEMP/bb:$PATH" bash .github/tests/life.sh
+      - name: Shellcheck
+        if: runner.os == 'Linux'
+        run: shellcheck -S warning life .github/tests/life.sh

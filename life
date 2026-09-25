@@ -65,8 +65,8 @@ cmd_status() {
 
 cmd_start() { # the whole session-start read, in one call, for every agent
   if [ -f .claude/.adhd-always ]; then
-    echo "=== ADHD mode: always on. Apply these rules to every reply this session. \"stop adhd mode\" turns it off for the session; deleting .claude/.adhd-always turns it off for good. ==="
-    awk 'NR==1&&/^---$/{s=1;next} s==1{if(/^---$/)s=2;next} {print}' .claude/skills/i-have-adhd/SKILL.md
+    echo "=== ADHD mode is on: apply these rules to every reply this session ==="
+    cat .claude/skills/i-have-adhd/always-on.md
     echo
   fi
   cmd_status
