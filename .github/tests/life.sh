@@ -419,6 +419,24 @@ has "Claude Code runs the safety net" "$(cat "$REPO/.claude/settings.json")" "./
 has "Codex runs the safety net" "$(cat "$REPO/.codex/hooks.json")" 'life\" safety'
 has "log asks for their words" "$(fresh setup; ./life log --stopped 'x')" "no --said"
 
+# --- their exact words, taken from the message hook
+fresh setup
+printf '{"prompt":"ok wrapping up for today. I stopped at comparing two phone plans, got as far as the Jio one. energy got low after lunch"}' | ./life safety >/dev/null
+[ -f .life/last-message ] && ok || bad "message hook remembers the latest message"
+./life ritual wrap-up >/dev/null
+out="$(./life log --stopped "comparing phone plans")"
+e="$(awk '/^## 20/{n++} n==1' current.md)"
+has "log quotes their sentence verbatim" "$e" 'Their words: "I stopped at comparing two phone plans, got as far as the Jio one"'
+lacks "log quotes only that sentence" "$e" "after lunch\""
+has "log says where the words came from" "$out" "from their last message"
+has "their words settle wrap-up (auto)" "$(./life pending)" "pending: none"
+printf '{"prompt":"done for today, nothing much happened"}' | ./life safety >/dev/null
+./life log --new --stopped "x" >/dev/null
+lacks "no stopping sentence, no quote" "$(awk '/^## 20/{n++} n==1' current.md)" "Their words"
+printf '%s\t%s\n' "$(days_ago 1)" "I stopped at page 9" > .life/last-message
+./life log --new --stopped "y" >/dev/null
+lacks "yesterday's message is never quoted" "$(awk '/^## 20/{n++} n==1' current.md)" "page 9"
+
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"
 out="$(./life frob 2>&1)"; rc=$?

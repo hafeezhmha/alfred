@@ -8,3 +8,4 @@ private/
 .DS_Store
 .life/last-plan
 .life/pending
+.life/last-message

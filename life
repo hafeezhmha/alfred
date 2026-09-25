@@ -201,7 +201,7 @@ cmd_add() { # add "text" [--now|--next]
 
 # ---------- log: today's current.md entry ----------
 cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--energy ..] [--new]
-  topic=""; stopped=""; energy=""; working=""; said=""; dones=""; new=0; has=0
+  topic=""; stopped=""; energy=""; working=""; said=""; said_auto=""; dones=""; new=0; has=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --topic|--stopped|--energy|--working|--done|--said)
@@ -215,6 +215,7 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
     esac
   done
   [ "$has" = 1 ] || die 'usage: ./life log --stopped "exact point" [--said "their words"] [--topic ..] [--done ..]... [--energy ..] [--new]'
+  if [ -z "$said" ] && [ -n "$stopped" ]; then said="$(said_from_message)"; [ -z "$said" ] || said_auto=1; fi
   top="$(awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/{print substr($0, 4, 10); exit}' current.md)"
   mode=new; [ "$top" = "$TODAY" ] && [ "$new" = 0 ] && mode=merge
   tmp="$(mktemp)"
@@ -267,6 +268,7 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
   echo "ok: log $([ "$mode" = merge ] && echo "updated" || echo "added") for $TODAY"
   awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | sed '/^$/d; s/^/  /'
   [ "$lines" -le 15 ] || echo "note: today's entry is $lines lines; detail belongs in areas/<area>/README.md"
+  [ -z "$said_auto" ] || echo "their words, from their last message: \"$said\""
   if pending_list | grep -qx log; then
     echo "pending: log still needs their exact words about where they stopped: ./life log --said \"<their words, unchanged>\" (or ./life pending clear log if they didn't say)"
   elif [ -n "$stopped" ] && [ -z "$said" ]; then echo "note: no --said; add their exact words about where they stopped: ./life log --said \"...\""; fi
@@ -405,9 +407,26 @@ cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by
 # rule in AGENTS.md, never replaces it. OpenCode has no such hook.
 CRISIS_RE="what'?s the point|no point (in|of) (living|anything|life|going on|trying)|kill (myself|me)|suicid|end (it all|my life|things|everything)|want(ed)? to die|wanna die|better off (dead|without me)|(don'?t|do not) want to (be here|live|exist|wake up)|not wake up|disappear|burden|hopeless|hate myself|fail(ing)? at everything|hurt(ing)? myself|self[- ]?harm|cut(ting)? myself|can'?t go on|give up on (life|everything)|mar ja(na|un|unga|ungi)|marna chah|jeena nahi|jeene ka ma(n|nn) nahi|khud ko khatam"
 
+LAST_MSG=".life/last-message"   # git-ignored, local, replaced on every message
+remember_message() { # keep the person's latest message verbatim, so log can quote them
+  printf '%s' "$1" | grep -q '"prompt"' || return 0
+  # shellcheck disable=SC1112  # a curly apostrophe restored on purpose, as they typed it
+  m="$(printf '%s' "$1" | sed -nE 's/.*"prompt" *: *"(([^"\\]|\\.)*)".*/\1/p' | sed -e 's/\\n/ /g' -e 's/\\"/"/g' -e 's/\\u2019/’/g')"
+  [ -n "$m" ] || return 0
+  mkdir -p .life; printf '%s\t%s\n' "$TODAY" "$m" > "$LAST_MSG"
+}
+
+said_from_message() { # the sentence of today's latest message that says where they stopped, unchanged
+  [ -f "$LAST_MSG" ] || return 0
+  # one sentence per line (awk, not sed: macOS sed can't put a newline in a replacement)
+  awk -F'\t' -v t="$TODAY" '$1 == t { m = $0; sub(/^[^\t]*\t/, "", m); n = split(m, p, /[.!?]+ +/); for (i = 1; i <= n; i++) print p[i] }' "$LAST_MSG" | \
+    grep -Ei "stopped|got (as far as|to|through|up to)|left (it )?off|halfway|up to (page|step|the)|paused (at|on)|as far as" | head -1 | sed -E 's/[.!?]+$//; s/^ +//'
+}
+
 cmd_safety() {
   input=""; if [ ! -t 0 ]; then while IFS= read -r -t 2 line; do input="$input$line"; done; input="$input${line:-}"; fi
   [ -n "$input" ] || input="$*"
+  remember_message "$input"
   # shellcheck disable=SC1112  # the curly apostrophe is deliberate: "what’s the point" must match too
   text="$(printf '%s' "$input" | sed 's/\\u2019/'"'"'/g; s/’/'"'"'/g' | tr 'A-Z' 'a-z')"
   hit="$(printf '%s' "$text" | grep -Eo "$CRISIS_RE" | head -1 || true)"
