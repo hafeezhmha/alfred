@@ -46,7 +46,7 @@ q_count() { printf '%s\n' "$QITEMS" | awk -F'\t' -v k="$1" '$1 == k' | grep -c .
 
 q_list() { # print one section: header with count, then "id text" rows
   k="$1"; n="$(q_count "$k")"; label="$(qname "$k" | tr 'A-Z ' 'a-z_')"
-  [ "$k" = n ] && head="now[$n/3]" || head="$label[$n]"
+  [ "$k" = n ] && head="now[$n/3]" || head="${label}[$n]"
   if [ "$n" = 0 ]; then echo "$head: none"; return; fi
   if [ "$k" = w ]; then
     echo "$head{id,days,item}:"
@@ -127,7 +127,7 @@ cmd_queue() {
 
 cmd_move() { # move <id...> <section>
   [ $# -ge 2 ] || die 'usage: ./life move <id...> <section>   e.g. ./life move i1 i2 next'
-  eval "dest=\${$#}"; tk="$(qkey "$dest")" || die "unknown section '$dest' (now, next, waiting, inbox, someday, done)"
+  dest="${!#}"; tk="$(qkey "$dest")" || die "unknown section '$dest' (now, next, waiting, inbox, someday, done)"
   q_load; specs=""; seen=" "; msgs=""; in_now=0; out_now=0; i=1
   while [ $i -lt $# ]; do
     eval "arg=\${$i}"; r="$(q_resolve "$arg")"
@@ -145,7 +145,7 @@ cmd_move() { # move <id...> <section>
   printf '%s' "$msgs"; q_load; q_list "$tk"
 }
 
-cmd_done() { [ $# -ge 1 ] || die 'usage: ./life done <id...>   (only after they confirm)'; cmd_move "$@" done; }
+cmd_done() { [ $# -ge 1 ] || die 'usage: ./life done <id...>   (only after they confirm)'; cmd_move "$@" "done"; }
 
 cmd_wait() { # wait <id> ["who"]
   [ $# -ge 1 ] || die 'usage: ./life wait <id> ["who"]   e.g. ./life wait x2 "Ana"'

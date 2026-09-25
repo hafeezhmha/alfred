@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1010  # "./life done ..." is a subcommand, not the shell keyword
 # Tests for the ./life launcher. Run from anywhere: bash .github/tests/life.sh
 # Each test runs in a fresh copy of the template, so the repo is never touched.
 set -u

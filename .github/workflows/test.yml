@@ -12,6 +12,7 @@ jobs:
     # this file but should never spend their Actions minutes on it.
     if: github.repository == 'hafeezhmha/life-os-template'
     strategy:
+      fail-fast: false   # one OS failing shouldn't hide the other's result
       matrix:
         # macOS runs the launcher under BSD awk and bash 3.2, as a Mac user would.
         os: [ubuntu-latest, macos-latest]
