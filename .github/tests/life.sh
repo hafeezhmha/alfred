@@ -368,6 +368,33 @@ has "check missing section" "$(./life check)" "no '## Inbox' section"
 fresh setup
 has "check waiting without date" "$(printf '# Queue\n\n## Now\n\n## Next\n\n## Waiting on\n\n- Bank\n\n## Inbox\n\n## Someday\n\n## Done this week\n' > queue.md; ./life check)" "w1 has no 'since YYYY-MM-DD'"
 
+# --- pending writes and the stop gate
+fresh setup
+echo "23:59" > .life/midpoint
+./life ritual >/dev/null
+has "ritual records the owed write" "$(./life pending)" "pending: plan"
+has "commands repeat what is owed" "$(./life queue now)" "pending: plan"
+out="$(./life gate </dev/null 2>&1)"; rc=$?
+[ $rc = 2 ] && ok || bad "gate blocks while a write is owed" "$out"
+has "gate says how to finish or skip" "$out" "./life pending clear plan"
+printf '{"stop_hook_active": true}' | ./life gate >/dev/null 2>&1 && ok || bad "gate lets go after blocking once"
+./life plan n1 >/dev/null
+has "plan settles the owed write" "$(./life pending)" "pending: none"
+printf '{}' | ./life gate >/dev/null 2>&1 && ok || bad "gate clear after the write"
+./life ritual wrap-up >/dev/null; ./life log --stopped "phone plans" --said "got as far as the Jio one" >/dev/null
+has "log settles wrap-up" "$(./life pending)" "pending: none"
+has "log keeps their words" "$(cat current.md)" 'Their words: "got as far as the Jio one"'
+has "status shows their words" "$(./life status)" 'said: "got as far as the Jio one"'
+./life ritual review >/dev/null; ./life pending clear reviewed >/dev/null
+has "pending clear skips on purpose" "$(./life pending)" "pending: none"
+out="$(printf '{"last_assistant_message":"Logged. Anything else?"}' | ./life gate 2>&1)"; rc=$?
+[ $rc = 2 ] && ok || bad "gate catches the forbidden closer" "$out"
+echo "$(days_ago 1) plan" > .life/pending
+has "yesterday's owed write never blocks" "$(./life pending)" "pending: none"
+hk="$(awk -F'"command": "' 'NF > 1 {sub(/",$/, "", $2); print $2}' .claude/settings.json | sed -n 2p | sed 's/\\"/"/g')"
+has "Claude Code Stop hook runs the gate" "$hk" "./life gate"
+has "Codex Stop hook runs the gate" "$(cat "$REPO/.codex/hooks.json")" 'life\" gate'
+
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"
 out="$(./life frob 2>&1)"; rc=$?

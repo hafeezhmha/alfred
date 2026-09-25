@@ -7,7 +7,7 @@ Get them moving in under three minutes. One question at a time.
 2. **Ask energy:** "Energy today: low, ok, high, or can't today?" (skip if
    they said). If it sounds like more than tired, the crisis rule in
    `AGENTS.md` comes first. "Can't today": `./life move <each Now id> next`,
-   say resting counts, no first step, stop.
+   `./life pending clear plan`, say resting counts, no first step, stop.
 3. **Propose Now,** numbered, a rough time each:
    - low: 1 item, or one basic-care task; that's a full day.
    - ok: 2. high: 3, hardest in their peak focus window.

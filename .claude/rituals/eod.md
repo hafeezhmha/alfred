@@ -13,10 +13,11 @@ planned.
 3. **If the day went badly** or they're hard on themselves, first: "Today was
    hard. Hard days happen to everyone who's trying. You'd go easy on a friend
    who had this day; you get the same."
-4. **Log it:** `./life log --stopped "<exact point>" --topic "<today's main
-   thing>" [--done "<concrete win>"]... [--energy "<level, and what affected
-   it>"]`. One `--done` per win. Use their words: "got as far as" is not
-   "done".
+4. **Log it:** `./life log --stopped "<exact point>" --said "<their exact
+   words about where they stopped>" --topic "<today's main thing>"
+   [--done "<concrete win>"]... [--energy "<level, and what affected it>"]`.
+   One `--done` per win (`./life done` already logged its own). "got as far
+   as" is not "done".
    - Stopped at: so someone with no memory of today can resume ("insurance
      form, page 3, need the policy number from Ana's email").
    - Neutral words only; no feelings or personal details (this file is in
@@ -31,6 +32,8 @@ planned.
 6. **Report in under six lines:** what you logged, what went to Inbox, one
    win in plain words, then the first step for tomorrow. Nothing happened
    today? Say so without judgment. Don't end with "anything else?".
-7. **Optional commit,** only on a yes:
+7. **Before your last reply:** `./life gate` prints nothing when all writes
+   are done (Claude Code and Codex run it for you).
+8. **Optional commit,** only on a yes:
    `git add current.md queue.md areas/ && git commit -m "wrap-up <date>"`.
    Never `git add -A`, never `private/`.

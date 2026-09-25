@@ -25,7 +25,10 @@ Then:
 therapy notes, setup and the review. It gets ids, dates, formats and the Now
 limit right; hand-edit only what no command covers. When something lands:
 `./life log`; new loose ends: `./life add`. When they say something is done,
-that is the confirmation: `./life done <id>` right away. **Read once:** don't re-read what
+that is the confirmation: `./life done <id>` right away. A `pending:` line is
+a write the ritual still owes: do it after their yes, or `./life pending
+clear` if they chose not to. `./life gate` checks this before you finish (a
+Stop hook in Claude Code and Codex; run it yourself in OpenCode). **Read once:** don't re-read what
 its output already showed.
 
 ## The files

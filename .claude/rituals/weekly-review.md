@@ -36,3 +36,4 @@ step 2 only. If their notes say "pages: yes", offer once to show steps 1 and
      week, stamps and archives. Mention the archive only if it moved
      anything.
    - End with the first action for next week, under two minutes.
+   - Stopping early (they're done for now): `./life pending clear reviewed`.

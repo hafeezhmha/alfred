@@ -170,7 +170,7 @@ cmd_plan() { # plan <id...>: Now becomes exactly these, in this order; the rest 
   done
   for ln in $chosen; do specs="$specs $ln:n:bottom"; done
   q_apply $specs
-  mkdir -p .life; echo "$TODAY" > .life/last-plan
+  mkdir -p .life; echo "$TODAY" > .life/last-plan; pending_clear plan
   echo "ok: Now planned for $TODAY"; q_load; q_list n
   echo "next:"
   echo "  name ONE first step for n1, under two minutes"
@@ -201,24 +201,24 @@ cmd_add() { # add "text" [--now|--next]
 
 # ---------- log: today's current.md entry ----------
 cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--energy ..] [--new]
-  topic=""; stopped=""; energy=""; working=""; dones=""; new=0; has=0
+  topic=""; stopped=""; energy=""; working=""; said=""; dones=""; new=0; has=0
   while [ $# -gt 0 ]; do
     case "$1" in
-      --topic|--stopped|--energy|--working|--done)
+      --topic|--stopped|--energy|--working|--done|--said)
         [ $# -ge 2 ] || die "$1 needs a value, e.g. $1 \"...\""
         v="$(printf '%s' "$2" | tr '\r\n\t' '   ')"; has=1
-        case "$1" in --topic) topic="$v";; --stopped) stopped="$v";; --energy) energy="$v";; --working) working="$v";;
+        case "$1" in --topic) topic="$v";; --stopped) stopped="$v";; --energy) energy="$v";; --working) working="$v";; --said) said="$v";;
           --done) dones="$dones$v"$'\036';; esac
         shift 2 ;;
       --new) new=1; shift ;;
-      *) die "unknown flag '$1'. flags: --stopped --topic --working --done --energy --new" ;;
+      *) die "unknown flag '$1'. flags: --stopped --said --topic --working --done --energy --new" ;;
     esac
   done
-  [ "$has" = 1 ] || die 'usage: ./life log --stopped "exact point" [--topic ..] [--done ..]... [--energy ..] [--new]'
+  [ "$has" = 1 ] || die 'usage: ./life log --stopped "exact point" [--said "their words"] [--topic ..] [--done ..]... [--energy ..] [--new]'
   top="$(awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/{print substr($0, 4, 10); exit}' current.md)"
   mode=new; [ "$top" = "$TODAY" ] && [ "$new" = 0 ] && mode=merge
   tmp="$(mktemp)"
-  M="$mode" D="$TODAY" TP="$topic" ST="$stopped" EN="$energy" WK="$working" DN="$dones" awk '
+  M="$mode" D="$TODAY" TP="$topic" ST="$stopped" SD="$said" EN="$energy" WK="$working" DN="$dones" awk '
     function out(   i, s) {
       hd = "day"; if (tp != "") hd = tp; if (ENVIRON["TP"] != "") hd = ENVIRON["TP"]
       print "## " ENVIRON["D"] " — " hd; print ""
@@ -229,7 +229,9 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
       for (i = 1; i <= nd; i++) if (dn[i] != "") { k = tolower(dn[i]); gsub(/[^a-z0-9]/, "", k); if (!(k in have)) { done[++dc] = "- " dn[i]; have[k] = 1 } }
       if (dc) { print "Done:"; for (i = 1; i <= dc; i++) print done[i]; print "" }
       if (ENVIRON["ST"] != "") st = "Stopped at: " ENVIRON["ST"]
-      if (st != "") { print st; print "" }
+      if (ENVIRON["SD"] != "") sd = "Their words: \"" ENVIRON["SD"] "\""
+      if (st != "") { print st; if (sd == "") print "" }
+      if (sd != "") { print sd; print "" }
       if (ENVIRON["EN"] != "") en = "Energy: " ENVIRON["EN"]
       if (en != "") { print en; print "" }
       for (i = 1; i <= xc; i++) { print extra[i]; s = 1 }
@@ -246,6 +248,7 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
       if ($0 ~ /^Working on:/) { f = "wk"; wk = $0; next }
       if ($0 ~ /^Done:/) { f = "dn"; next }
       if ($0 ~ /^Stopped at:/) { f = "st"; st = $0; next }
+      if ($0 ~ /^Their words:/) { f = ""; sd = $0; next }
       if ($0 ~ /^Energy:/) { f = "en"; en = $0; next }
       if ($0 ~ /^Next:/) { f = ""; next }
       if ($0 ~ /^[ \t]*$/) { f = ""; next }
@@ -259,6 +262,7 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
   ' current.md | cat -s > "$tmp"
   mv "$tmp" current.md
   lines="$(awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | grep -c . || true)"
+  pending_clear log
   echo "ok: log $([ "$mode" = merge ] && echo "updated" || echo "added") for $TODAY"
   awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | sed '/^$/d; s/^/  /'
   [ "$lines" -le 15 ] || echo "note: today's entry is $lines lines; detail belongs in areas/<area>/README.md"
@@ -349,6 +353,44 @@ cmd_learned() { # learned tN [--skip]
   echo "ok: $1 $(cat "$tmp.msg"); next question tomorrow at the earliest"; rm -f "$tmp.msg"
 }
 
+# ---------- pending writes (the ritual's owed write) and the stop gate ----------
+# A ritual owes one write: plan-day -> plan, wrap-up -> log, review -> reviewed.
+# Only today's lines count, so nothing stale ever blocks.
+PENDING=".life/pending"
+pending_add() { mkdir -p .life; pending_list | grep -qx "$1" || echo "$TODAY $1" >> "$PENDING"; }
+pending_clear() { [ -f "$PENDING" ] || return 0; tmp="$(mktemp)"; grep -v " $1\$" "$PENDING" > "$tmp" || true; mv "$tmp" "$PENDING"; }
+pending_list() { [ -f "$PENDING" ] && awk -v t="$TODAY" '$1 == t { print $2 }' "$PENDING" | sort -u || true; }
+pending_hint() { # one line at the end of any command, only if something is owed
+  p="$(pending_list | tr '\n' ' ' | sed 's/ $//')"; [ -n "$p" ] || return 0
+  echo "pending: $p (a write this ritual still owes: $(for w in $p; do case "$w" in plan) printf './life plan <ids> ';; log) printf './life log --stopped .. ';; reviewed) printf './life reviewed --focus .. ';; esac; done)after their yes; if they chose not to: ./life pending clear $p)"
+}
+
+cmd_pending() {
+  case "${1:-}" in
+    "") p="$(pending_list)"; if [ -z "$p" ]; then echo "pending: none"; else echo "pending: $(echo $p)"; fi ;;
+    clear) shift; if [ -z "${1:-}" ] || [ "$1" = all ]; then rm -f "$PENDING"; else for w in "$@"; do pending_clear "$w"; done; fi; echo "ok: pending cleared" ;;
+    *) die "usage: ./life pending [clear [plan|log|reviewed|all]]" ;;
+  esac
+}
+
+cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by hand in OpenCode.
+  # hooks send their JSON at once; the timeout keeps a manual run from waiting on an open stdin
+  input=""; if [ ! -t 0 ]; then while IFS= read -r -t 2 line; do input="$input$line"; done; input="$input${line:-}"; fi
+  printf '%s' "$input" | grep -Eq '"stop_hook_active" *: *true' && return 0   # blocked once already: let it stop
+  [ -f .life/SETUP_NEEDED ] && return 0
+  p="$(pending_list | tr '\n' ' ' | sed 's/ $//')"
+  if [ -n "$p" ]; then
+    echo "Life OS: this ritual still owes a write ($p). If the person said yes, do it now with ./life (see ./life help). If they chose not to or want to stop, run: ./life pending clear $p. Then finish your reply." >&2
+    exit 2
+  fi
+  if printf '%s' "$input" | grep -Eqi '"last_assistant_message" *: *"[^"]*anything else'; then
+    echo "Life OS: end with one concrete next step, not \"anything else?\". Rewrite your last line." >&2
+    exit 2
+  fi
+  [ -t 1 ] && echo "gate: clear"
+  return 0
+}
+
 # ---------- ritual: which one fits now ----------
 RITUALS=".claude/rituals"
 ritual_file() { case "$1" in plan-day|start-day) echo "$RITUALS/start-day.md";; wrap-up|eod) echo "$RITUALS/eod.md";;
@@ -381,6 +423,11 @@ cmd_ritual() {
   if [ -z "${1:-}" ] && [ "$rd" != none ] && [ "$rd" -ge 7 ]; then
     echo "review: due ($rd days). offer before starting: \"2-minute version now, the full one, or later?\" if yes: ./life ritual review"
   fi
+  case "$name" in
+    plan-day|start-day) [ "$(cat .life/last-plan 2>/dev/null)" = "$TODAY" ] || pending_add plan ;;
+    wrap-up|eod) pending_add log ;;
+    review|weekly-review) pending_add reviewed ;;
+  esac
   f="$(ritual_file "$name")"; echo "file: $f"; echo "---"; cat "$f"
 }
 
@@ -406,11 +453,13 @@ cmd_status() {
       printf "stopped: %s \"%s\" (%s)\n", d, tp, when; next }
     n == 1 && /^Stopped at:/ { f = 1; sub(/^Stopped at: */, ""); s = $0; next }
     n == 1 && /^Energy:/ { en = $0; sub(/^Energy: */, "", en); f = 0; next }
+    n == 1 && /^Their words:/ { sd = $0; sub(/^Their words: */, "", sd); f = 0; next }
     n == 1 && /^[ \t]*$/ { f = 0; next }
     n == 1 && f { s = s " " $0; next }
     n == 1 && !/^(Working on|Done|Next):/ && !/^- / { other[++oc] = $0 }
     END { if (!n) { print "stopped: none yet (no dated entry in current.md)"; exit }
           if (s != "") print "  at: " s; else for (i = 1; i <= oc && i <= 3; i++) print "  " other[i]
+          if (sd != "") print "  said: " sd
           if (en != "") print "  energy: " en }
   ' current.md
   if grep -q '^# Queue' queue.md 2>/dev/null; then
@@ -424,6 +473,7 @@ cmd_status() {
   if [ "$rd" = none ]; then echo "review: none yet (offer when ready)"
   elif [ "$rd" -ge 7 ]; then echo "review: due (last $rd days ago)"
   else echo "review: not due (last $rd days ago)"; fi
+  pending_hint
   lr="$(learn_due)"; [ -z "$lr" ] || echo "learn: $(printf '%s' "$lr" | cut -f1) \"$(printf '%s' "$lr" | cut -f2)\" (end of session only: ./life learn)"
   rp="$(ritual_pick)"; echo "ritual: $(printf '%s' "$rp" | cut -f1) ($(printf '%s' "$rp" | cut -f2))"
   echo "next:"
@@ -580,7 +630,7 @@ EOF
     k == "d" && raw ~ /^- / { next }
     { print }' queue.md | cat -s > "$tmp"
   mv "$tmp" queue.md
-  review_stamp
+  review_stamp; pending_clear reviewed
   echo "ok: review logged in current.md, Done this week cleared, stamped for $TODAY"
   cmd_archive | sed 's/^/  /'
   echo "next:"
@@ -721,7 +771,8 @@ cmd_check() {
   [ "$ok" = 1 ]
 }
 
-case "${1:-status}" in
+CMD="${1:-status}"
+case "$CMD" in
   status|"") cmd_status ;;
   start) cmd_start ;;
   queue|q) shift; cmd_queue "$@" ;;
@@ -738,6 +789,8 @@ case "${1:-status}" in
   ritual) shift; cmd_ritual "$@" ;;
   learn) cmd_learn ;;
   learned) shift; cmd_learned "$@" ;;
+  pending) shift; cmd_pending "$@" ;;
+  gate) cmd_gate ;;
   review) cmd_review ;;
   reviewed) shift; cmd_reviewed "$@" ;;
   setup) shift; cmd_setup "$@" ;;
@@ -766,7 +819,7 @@ queue (move/done/plan only after the person says yes)
   ./life wait <id> ["who"]            to Waiting on, dated "since"
   ./life plan <id...>                 Now becomes exactly these (1-3); the rest of Now goes to top of Next
 log and notes
-  ./life log --stopped "exact point" [--topic ".."] [--working ".."] [--done ".."]... [--energy ".."] [--new]
+  ./life log --stopped "exact point" [--said "their exact words"] [--topic ".."] [--working ".."] [--done ".."]... [--energy ".."] [--new]
                                   write or update today's current.md entry; neutral words, no feelings
   ./life therapy-note "their words"   private, dated, never read back (only on their yes)
   ./life therapy-note --count         how many this week; the number only
@@ -775,6 +828,9 @@ setup and review
   ./life setup --name "..." --thing "..." --adhd yes|no|trial [--step "..."]   quick-start build, one call
   ./life review                   weekly review packet: done, this week's log, inbox, areas, therapy count
   ./life reviewed --focus "a" [--focus "b"] [--win ".."]   log the review, clear Done, stamp, archive
+rituals and the stop gate
+  ./life pending [clear [item|all]]   the write a started ritual still owes (plan, log, reviewed)
+  ./life gate                     exit 2 while a write is owed; the Stop hook in Claude Code and Codex. OpenCode: run it before finishing
 upkeep
   ./life reviewed                 (no flags) just stamp the review done
   ./life archive                  move current.md entries older than 4 weeks to archive/
@@ -784,3 +840,4 @@ HELP
     ;;
   *) die "unknown command '$1'. run: ./life help" ;;
 esac
+case "$CMD" in queue|q|move|now|next|someday|inbox|done|wait|add|learn|learned) pending_hint ;; esac
