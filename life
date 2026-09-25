@@ -145,7 +145,13 @@ cmd_move() { # move <id...> <section>
   printf '%s' "$msgs"; q_load; q_list "$tk"
 }
 
-cmd_done() { [ $# -ge 1 ] || die 'usage: ./life done <id...>   (only after they confirm)'; cmd_move "$@" "done"; }
+cmd_done() { # moves items to Done this week and adds each as a win in today's log entry
+  [ $# -ge 1 ] || die "usage: ./life done <id...>   (their \"it is done\" is the yes)"
+  q_load; local logwins=()
+  for a in "$@"; do r="$(q_resolve "$a")"; [ "$(printf '%s' "$r" | cut -f1)" = d ] || logwins+=(--done "$(printf '%s' "$r" | cut -f4)"); done
+  cmd_move "$@" "done"
+  if [ ${#logwins[@]} -gt 0 ]; then cmd_log "${logwins[@]}" >/dev/null; echo "  logged as a win in today's current.md entry"; fi
+}
 
 cmd_wait() { # wait <id> ["who"]
   [ $# -ge 1 ] || die 'usage: ./life wait <id> ["who"]   e.g. ./life wait x2 "Ana"'
@@ -218,7 +224,9 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
       print "## " ENVIRON["D"] " — " hd; print ""
       if (ENVIRON["WK"] != "") wk = "Working on: " ENVIRON["WK"]
       if (wk != "") { print wk; print "" }
-      nd = split(ENVIRON["DN"], dn, "\036"); for (i = 1; i <= nd; i++) if (dn[i] != "") done[++dc] = "- " dn[i]
+      nd = split(ENVIRON["DN"], dn, "\036")
+      for (i = 1; i <= dc; i++) { k = tolower(done[i]); gsub(/[^a-z0-9]/, "", k); have[k] = 1 }
+      for (i = 1; i <= nd; i++) if (dn[i] != "") { k = tolower(dn[i]); gsub(/[^a-z0-9]/, "", k); if (!(k in have)) { done[++dc] = "- " dn[i]; have[k] = 1 } }
       if (dc) { print "Done:"; for (i = 1; i <= dc; i++) print done[i]; print "" }
       if (ENVIRON["ST"] != "") st = "Stopped at: " ENVIRON["ST"]
       if (st != "") { print st; print "" }
@@ -254,6 +262,7 @@ cmd_log() { # log --stopped "..." [--topic ..] [--working ..] [--done ..]... [--
   echo "ok: log $([ "$mode" = merge ] && echo "updated" || echo "added") for $TODAY"
   awk '{sub(/\r$/, "")} /^```/{f=!f} !f && /^## 20[0-9][0-9]-/{n++} n==1' current.md | sed '/^$/d; s/^/  /'
   [ "$lines" -le 15 ] || echo "note: today's entry is $lines lines; detail belongs in areas/<area>/README.md"
+  case "$energy" in ""|*" "*) ;; *) echo "note: energy \"$energy\" has no cause; add what affected it: ./life log --energy \"$energy, <what affected it>\"";; esac
   echo "next:"
   echo "  check the entry uses their words (\"got as far as\" is not \"done\"), one --done per win, energy with its cause"
   echo "  report in under six lines, ending with tomorrow's first step; never \"anything else?\""

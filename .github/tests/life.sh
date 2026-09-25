@@ -223,6 +223,7 @@ has "queue empty is definite" "$(printf '# Queue\n\n## Now\n\n## Next\n' > q2.md
 out="$(./life move i1 next)"; has "move reports" "$out" "ok: i1 -> Next: Pay the BESCOM bill"
 has "move lands at bottom" "$(./life queue next)" "x4 Pay the BESCOM bill"
 out="$(./life done "passport")"; has "done by substring" "$out" "-> Done this week: Book the Passport Seva"
+has "done logs the win today" "$(awk '/^## 20/{n++} n==1' current.md)" "- Book the Passport Seva appointment"
 has "done is checked" "$(cat queue.md)" "- [x] Book the Passport Seva"
 out="$(./life done "passport" 2>&1)"; has "done is idempotent" "$out" "already in Done this week"
 out="$(./life done n9 2>&1)"; rc=$?
@@ -256,6 +257,9 @@ c="$(awk '/^## 20/{n++} n==1' current.md)"
 has "log merges stopped" "$c" "Stopped at: form page 4"
 has "log merges done" "$c" "- paid BESCOM"
 has "log appends done" "$c" "- called Amma"
+./life log --done "Called Amma." >/dev/null
+[ "$(awk '/^## 20/{n++} n==1' current.md | grep -ci 'called amma')" = 1 ] && ok || bad "log skips a repeated win"
+has "log flags energy without cause" "$(./life log --energy low)" "has no cause"
 has "log keeps energy" "$c" "Energy: low after commute"
 [ "$(grep -c "^## $TODAY" current.md)" = 1 ] && ok || bad "log merge keeps one entry"
 ./life log --new --topic "Weekly review" --done "win" >/dev/null
