@@ -146,6 +146,48 @@ out="$(./life start)"
 has "start adhd header" "$out" "ADHD mode is on"
 has "start adhd rules" "$out" "First line is the next action"
 
+# --- nudge (LIFE_NUDGE_DRY prints instead of notifying)
+fresh setup
+out="$(LIFE_NUDGE_DRY=1 ./life nudge)"
+has "nudge names first Now item" "$out" "One thing today: IAM video 5 from 12:40"
+lacks "nudge no checkbox" "$out" "[ ]"
+./life start >/dev/null
+out="$(LIFE_NUDGE_DRY=1 ./life nudge)"
+[ -z "$out" ] && ok || bad "nudge skips after a session today" "$out"
+has "nudge test forces" "$(LIFE_NUDGE_DRY=1 ./life nudge test)" "One thing today"
+echo "09:30 private" > .life/nudge
+out="$(LIFE_NUDGE_DRY=1 ./life nudge test)"
+lacks "nudge private hides item" "$out" "IAM"
+has "nudge private text" "$out" "Your one small step"
+
+fresh
+out="$(LIFE_NUDGE_DRY=1 ./life nudge test)"
+[ -z "$out" ] && ok || bad "nudge silent before setup" "$out"
+
+# on/off against a sandbox HOME, with launchctl/systemctl stubs that log calls
+fresh setup
+mkdir -p "$T/stub" "$T/home"
+for c in launchctl systemctl; do printf '#!/bin/sh\necho "%s $*" >> "%s/calls"\n' "$c" "$T" > "$T/stub/$c"; chmod +x "$T/stub/$c"; done
+out="$(HOME="$T/home" PATH="$T/stub:$PATH" ./life nudge on 7:5 2>&1)"; rc=$?
+[ $rc != 0 ] && ok || bad "nudge rejects bad time" "$out"
+out="$(HOME="$T/home" PATH="$T/stub:$PATH" ./life nudge on 09:05 2>&1)"
+has "nudge on confirms" "$out" "every day at 09:05"
+if [ "$(uname)" = Darwin ]; then
+  p="$T/home/Library/LaunchAgents/com.life-os.nudge.plist"
+  has "launchd hour" "$(cat "$p")" "<key>Hour</key><integer>9</integer>"
+  has "launchd minute" "$(cat "$p")" "<key>Minute</key><integer>5</integer>"
+  has "launchd path" "$(cat "$p")" "<string>$T/life</string>"
+  has "launchctl load" "$(cat "$T/calls")" "launchctl load"
+else
+  has "systemd time" "$(cat "$T/home/.config/systemd/user/life-os-nudge.timer")" "OnCalendar=*-*-* 09:05:00"
+  has "systemd path" "$(cat "$T/home/.config/systemd/user/life-os-nudge.service")" "ExecStart=/bin/bash \"$T/life\" nudge"
+  has "systemctl enable" "$(cat "$T/calls")" "--user enable --now life-os-nudge.timer"
+fi
+HOME="$T/home" PATH="$T/stub:$PATH" ./life nudge off >/dev/null
+left="$(find "$T/home" -type f)"
+[ -z "$left" ] && ok || bad "nudge off removes schedule" "$left"
+[ ! -f .life/nudge ] && ok || bad "nudge off removes config"
+
 # --- Claude Code hook runs the same command
 fresh
 hook="$(awk -F'"command": "' 'NF > 1 {sub(/",$/, "", $2); print $2}' .claude/settings.json | sed 's/\\"/"/g')"

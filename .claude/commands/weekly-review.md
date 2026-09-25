@@ -28,7 +28,8 @@ stuck? Skip areas they don't want to look at this week, without comment.
 
 Ask one question: "Anything in this system you're ignoring or that feels like
 a chore?" If a ritual or area has been skipped for two weeks, offer to shrink,
-move, or drop it. Offer one small refresh if things feel stale (novelty
+move, or drop it. If a nudge is on (`.life/nudge` exists) and they've been
+ignoring it, offer a new time or `./life nudge off`. Offer one small refresh if things feel stale (novelty
 matters).
 
 ## 5. Next week (3 min)

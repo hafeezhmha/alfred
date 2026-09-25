@@ -150,7 +150,13 @@ trade-offs, drawn from `patterns.md` and tuned to what you learned:
    do (coffee, commute, kids' bedtime).
 5. **Failure plan**: what happens after a missed day or week. Default: nothing
    is "behind"; the next session just starts from today.
-6. **Personal suggestions**: 2–4 specific ideas that come from *their*
+6. **Nudge** (optional): a daily desktop notification at a time they pick,
+   naming their first Now item, and only on days they haven't opened Life OS
+   yet. Offer it if out-of-sight-out-of-mind came up, or if they said
+   reminders help. Skip it if they said they learn to ignore reminders. If
+   their screen is shared or shown on a lock screen, offer `private` mode
+   (generic text, no task named). Desktop only: it can't reach their phone.
+7. **Personal suggestions**: 2–4 specific ideas that come from *their*
    answers, not generic advice. Each one names the answer it came from
    ("You said Wednesdays crash, so Wednesday's Now is capped at 1 item").
 
@@ -178,9 +184,12 @@ Only after an explicit yes. Then write:
 6. ADHD flag: create `.claude/.adhd-always` if they said yes; delete it if
    they said no.
 7. Delete `.life/SETUP_NEEDED` and `.life/setup-progress.md`.
-8. Run `./life reviewed` so the first weekly review comes due in 7 days, at
+8. If they chose a nudge: `./life nudge on HH:MM` (add `private` if chosen),
+   then `./life nudge test` so they see one now. This changes their
+   computer's scheduler, so say so and get a yes first.
+9. Run `./life reviewed` so the first weekly review comes due in 7 days, at
    the end of the trial week (fresh setup only; skip in retune mode).
-9. Run `./life check` and fix anything it reports.
+10. Run `./life check` and fix anything it reports.
 
 Store sensitive details (diagnoses, health, money figures, relationship
 issues) only if they agreed; otherwise keep a neutral note, or put them in

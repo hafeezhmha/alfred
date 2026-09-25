@@ -71,9 +71,88 @@ cmd_start() { # the whole session-start read, in one call, for every agent
   fi
   cmd_status
   [ -f .life/SETUP_NEEDED ] && return 0
+  date +%Y-%m-%d > .life/last-start # a session happened today, so no nudge
   echo
   echo "=== context.md ==="
   cat context.md
+}
+
+NUDGE_CONF=".life/nudge"
+LAUNCHD_PLIST="$HOME/Library/LaunchAgents/com.life-os.nudge.plist"
+SYSTEMD_DIR="$HOME/.config/systemd/user"
+
+nudge_text() { # one line, the first Now item if there is one; never a count or a reproach
+  if grep -q private "$NUDGE_CONF" 2>/dev/null; then
+    echo "Your one small step for today is ready. Open your agent and say hi."; return
+  fi
+  item="$(section queue.md "Now" | grep '^- ' | head -1 | sed -e 's/^- \[.\] //' -e 's/^- //' | cut -c1-90)"
+  if [ -n "$item" ]; then echo "One thing today: $item. Open your agent and say hi."
+  else echo "One small step is waiting whenever you're ready. Open your agent and say hi."; fi
+}
+
+nudge_show() {
+  [ -f .life/SETUP_NEEDED ] && return 0
+  if [ -z "${NUDGE_FORCE:-}" ] && [ "$(cat .life/last-start 2>/dev/null)" = "$(date +%Y-%m-%d)" ]; then return 0; fi
+  body="$(nudge_text)"
+  if [ -n "${LIFE_NUDGE_DRY:-}" ]; then echo "$body"
+  elif command -v osascript >/dev/null; then
+    osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "Life OS"' -e 'end run' "$body"
+  elif command -v notify-send >/dev/null; then notify-send "Life OS" "$body"
+  else echo "$body"; fi
+}
+
+nudge_on() {
+  case "${1:-}" in [0-2][0-9]:[0-5][0-9]) ;; *) echo 'usage: ./life nudge on HH:MM [private]   e.g. ./life nudge on 09:30'; exit 1 ;; esac
+  h=$((10#${1%:*})); m=$((10#${1#*:}))
+  [ "$h" -lt 24 ] || { echo "Hour must be 00-23."; exit 1; }
+  mkdir -p .life; echo "$*" > "$NUDGE_CONF"
+  if [ "$(uname)" = Darwin ]; then
+    mkdir -p "$(dirname "$LAUNCHD_PLIST")"
+    cat > "$LAUNCHD_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.life-os.nudge</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$ROOT/life</string><string>nudge</string></array>
+  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>$h</integer><key>Minute</key><integer>$m</integer></dict>
+</dict></plist>
+EOF
+    launchctl unload "$LAUNCHD_PLIST" 2>/dev/null || true
+    launchctl load "$LAUNCHD_PLIST"
+  elif command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
+    mkdir -p "$SYSTEMD_DIR"
+    printf '[Unit]\nDescription=Life OS daily nudge\n\n[Service]\nType=oneshot\nExecStart=/bin/bash "%s/life" nudge\n' "$ROOT" > "$SYSTEMD_DIR/life-os-nudge.service"
+    # Persistent: if the computer was asleep at that time, nudge at the next wake instead.
+    printf '[Unit]\nDescription=Life OS daily nudge\n\n[Timer]\nOnCalendar=*-*-* %02d:%02d:00\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n' "$h" "$m" > "$SYSTEMD_DIR/life-os-nudge.timer"
+    systemctl --user daemon-reload
+    systemctl --user enable --now life-os-nudge.timer >/dev/null 2>&1
+  else
+    echo "No launchd or systemd user session here (WSL?). To schedule it yourself, run daily: bash \"$ROOT/life\" nudge"
+    return 0
+  fi
+  echo "Nudge on: every day at $1, only on days you haven't opened Life OS yet. ./life nudge off stops it."
+  command -v osascript >/dev/null || command -v notify-send >/dev/null || echo "note: no notify-send found; install libnotify so the nudge can show."
+}
+
+nudge_off() {
+  if [ -f "$LAUNCHD_PLIST" ]; then launchctl unload "$LAUNCHD_PLIST" 2>/dev/null || true; rm -f "$LAUNCHD_PLIST"; fi
+  if [ -f "$SYSTEMD_DIR/life-os-nudge.timer" ]; then
+    systemctl --user disable --now life-os-nudge.timer >/dev/null 2>&1 || true
+    rm -f "$SYSTEMD_DIR/life-os-nudge.timer" "$SYSTEMD_DIR/life-os-nudge.service"
+    systemctl --user daemon-reload 2>/dev/null || true
+  fi
+  rm -f "$NUDGE_CONF"
+  echo "Nudge off."
+}
+
+cmd_nudge() {
+  case "${1:-}" in
+    "") nudge_show ;;
+    on) shift; nudge_on "$@" ;;
+    off) nudge_off ;;
+    test) NUDGE_FORCE=1 nudge_show ;;
+    *) echo "usage: ./life nudge [on HH:MM [private] | off | test]"; exit 1 ;;
+  esac
 }
 
 cmd_add() {
@@ -160,6 +239,7 @@ case "${1:-status}" in
   reviewed) cmd_reviewed ;;
   archive) cmd_archive ;;
   check) cmd_check ;;
+  nudge) shift; cmd_nudge "$@" ;;
   help|-h|--help)
     cat <<'HELP'
 ./life status          where you stopped, today's Now, waiting-on, inbox count
@@ -168,6 +248,9 @@ case "${1:-status}" in
 ./life reviewed        stamp the weekly review as done
 ./life archive         move current.md entries older than 4 weeks to archive/
 ./life check           find missing files and unfilled placeholders
+./life nudge on 09:30  daily desktop nudge, only on days you haven't opened Life OS
+                       (add "private" to hide your Now item; ./life nudge off stops it,
+                       ./life nudge test shows one now)
 HELP
     ;;
   *) echo "unknown command: $1 (try ./life help)"; exit 1 ;;

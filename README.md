@@ -123,6 +123,22 @@ And one from the terminal, for the thought that arrives mid-shower:
 
 It lands in your Inbox. Sorting it is a job for later-you.
 
+### A tap on the shoulder
+
+Out of sight, out of mind is real. If you'd like one, Life OS can send a
+single desktop notification each day:
+
+```
+./life nudge on 09:30
+```
+
+> Life OS: One thing today: IAM video 5 from 12:40. Open your agent and say hi.
+
+It only shows up on days you haven't opened Life OS yet. No counts, no "you
+missed", no second ping. Add `private` to keep your task off the lock screen,
+and `./life nudge off` stops it. Setup offers it too, so you may never need to
+type this.
+
 ## Promises this system keeps
 
 - **You stop being the memory.** Where you stopped, what's open and who you're
@@ -176,6 +192,7 @@ It lands in your Inbox. Sorting it is a job for later-you.
 ./life archive    move log entries older than 4 weeks into archive/
 ./life reviewed   mark the weekly review done
 ./life check      spot missing files or unfilled setup placeholders
+./life nudge      daily desktop nudge: on HH:MM [private], off, or test
 ```
 
 </details>

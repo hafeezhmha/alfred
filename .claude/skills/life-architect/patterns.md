@@ -53,6 +53,10 @@ traits. Always offer; never impose.
   inbox. Sorting later is a separate job.
 - **External time**: visible timers, time-blocking with alerts, "leave by"
   times instead of "arrive at" times.
+- **Daily nudge**: `./life nudge on 09:30` shows one desktop notification with
+  today's first Now item, only if they haven't opened Life OS yet. Beats
+  out-of-sight-out-of-mind; if they start ignoring it, move the time or turn
+  it off rather than making it louder.
 - **Body doubling**: suggest working alongside someone, a co-working call, or
   having the agent check in every 25 minutes during a hard task.
 - **Novelty budget**: expect systems to lose shine at 2–3 weeks. Plan a small
