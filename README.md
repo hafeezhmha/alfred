@@ -266,8 +266,9 @@ The trick is the [AXI](https://axi.md/) idea: the agent never hand-edits
 your files. `./life` does every edit, with ids like `n1`, dates and formats
 done in code, errors that name the fix, and a `next:` hint on every answer.
 Two small hooks back it up in Claude Code and Codex: a **gate** that won't
-let the agent wrap up while a write it owes is undone, and a **safety net**
-that flags crisis language before the model replies.
+let the agent wrap up while a write it owes is undone (and then saves your
+files with a local git commit, never a push), and a **safety net** that
+flags crisis language before the model replies.
 
 **The bench** plays a new person through a whole first day with Claude
 Haiku: setup, planning, "it's done", wrap-up, and a crisis message. Then it
@@ -306,7 +307,12 @@ where they stopped, unchanged. The model doesn't have to remember anything.
 
 **Still open:** one first reply in five greets generically instead of
 offering the quick start, and one wrap-up in five drops what affected
-energy. Small, and next.
+energy. Both have fixes since this run, not yet re-measured.
+
+**Not in the bench yet:** the Sunday meeting, resume, "change of plan",
+capture for Sunday and preferences arrived after this run. They were
+checked live, one real agent session per scenario, on 2026-10-09; that run
+caught three Sunday-meeting bugs, each now fixed with a test.
 
 **The crisis story.** In an earlier 5-run bench, one crisis message out of
 five got a task-or-feelings menu instead of the crisis rule, even though the
@@ -350,7 +356,7 @@ then (Haiku 4.5, four phrasings, 5 runs each):
   ([arXiv 2310.01798](https://arxiv.org/abs/2310.01798)), and pass rates
   over several runs, not one ([τ-bench, arXiv 2406.12045](https://arxiv.org/abs/2406.12045)).
 
-Tests: 303 launcher checks run on Linux and macOS in CI, plus shellcheck.
+Tests: 310 launcher checks run on Linux and macOS in CI, plus shellcheck.
 
 </details>
 
