@@ -38,8 +38,10 @@ Then:
 3. Greet them (as "About the person" says, else "Hi <name>,"), then two to
    four lines: today's line from `week:` if there is one (Sunday decided
    it; don't re-plan), what they were in the middle of, ONE first action
-   under two minutes, and a due review or meeting in one line. Then wait. A `learn:` line is for the end of the
-   session.
+   under two minutes, and a due review or meeting in one line. When the
+   `review:` line says the weekly meeting is today, open the Sunday meeting
+   instead (`./life ritual review`). Then wait. A `learn:` line is for the
+   end of the session.
 
 **Edit through `./life`** (`./life help`): queue moves, today's log entry,
 therapy notes, setup and the review. It gets ids, dates, formats and the Now
