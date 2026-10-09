@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.svg">
-  <img src=".github/assets/banner-light.svg" width="529" alt="ALFRED: an ASCII leaf beside the word alfred, your personal executive manager">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/alfred-dark.svg">
+  <img src=".github/assets/alfred-light.svg" width="529" alt="ALFRED: a pixel-art butler in a tailcoat holding a silver tray, beside the word alfred, your personal executive manager">
 </picture>
 
 **A personal executive manager for brains that zig, zag, hyperfocus, freeze,
