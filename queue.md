@@ -12,7 +12,7 @@ which app is the source of truth.
 
 At most 3. What today is actually for.
 
-- [ ] Type `/life` (or say "set up my life os") to set up Life OS, about 3 minutes
+- [ ] Say hello (or type `/life`) to set up ALFRED, about 3 minutes
 
 ## Next
 

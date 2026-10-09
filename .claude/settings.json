@@ -7,7 +7,7 @@
             "type": "command",
             "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && bash ./life start 2>&1 || true",
             "timeout": 30,
-            "statusMessage": "Loading your Life OS"
+            "statusMessage": "ALFRED is reading his notes"
           }
         ]
       }

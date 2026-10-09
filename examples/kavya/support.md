@@ -1,4 +1,4 @@
-<!-- In a real Life OS this is private/support.md, which git ignores. -->
+<!-- In a real copy this is private/support.md, which git ignores. -->
 # Support
 
 - Counsellor: once a month, CBT.
