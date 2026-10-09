@@ -441,6 +441,8 @@ autosave() {
     autosave_block "a merge or rebase is in progress; nothing saved until it is finished (git status shows it)"; return 0
   fi
   paths=""; for p in $AUTOSAVE_PATHS; do [ -e "$p" ] && paths="$paths $p"; done
+  # setup deletes the template's marker; that deletion is part of their copy too
+  git ls-files --error-unmatch .life/SETUP_NEEDED >/dev/null 2>&1 && paths="$paths .life/SETUP_NEEDED"
   [ -n "$paths" ] || return 0
   # shellcheck disable=SC2086  # $paths is a fixed list of plain names
   if [ -z "$(git status --porcelain -- $paths)" ]; then rm -f "$AUTOSAVE_BLOCKED"; return 0; fi

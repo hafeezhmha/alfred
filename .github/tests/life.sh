@@ -505,6 +505,9 @@ git remote set-url origin git@github.com:kavya/life-os.git
 out="$(./life guard 2>&1)" && ok || bad "guard is silent in a personal copy" "$out"
 
 # --- autosave: a personal copy commits its data files locally
+fresh; cp "$REPO/.gitignore" .; gitinit; git add -A && git commit -qm init
+./life setup --name K --thing x --adhd no >/dev/null; ./life gate </dev/null >/dev/null
+[ -z "$(git status --porcelain)" ] && ok || bad "autosave commits the setup, marker deletion included" "$(git status --porcelain)"
 fresh setup; cp "$REPO/.gitignore" .; gitinit; git add -A && git commit -qm init
 commits() { git rev-list --count HEAD; }
 ./life add "buy milk" >/dev/null; ./life gate </dev/null >/dev/null
