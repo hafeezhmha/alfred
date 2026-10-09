@@ -47,8 +47,9 @@ their notes say "pages: yes", offer once to show step 5 as a page (`lavish`).
    agree an if-then for each ("If the late call runs over, then Wednesday
    starts at 11 with the easy block").
 7. **Write it, one call:** `./life week set --outcome ".." --day "Mon: .."
-   --obstacle "If .., then .." --follow ".." --win ".."` (each repeatable;
-   re-pass Follow up items still open). It archives last week, logs the
+   --obstacle "If .., then .." --follow ".." --agenda ".." --win ".."`
+   (each repeatable). Re-pass Follow up items still open, and For Sunday
+   items the meeting didn't settle (`--agenda`); the rest are dropped. It archives last week, logs the
    review and clears Done. Then Monday: `./life plan <ids>` (or `./life add
    --now`), and end with Monday's first action, under two minutes.
    - Therapy notes: if the count is above 0, say only "N things noted for

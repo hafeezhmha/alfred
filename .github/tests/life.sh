@@ -585,6 +585,12 @@ has "last week is archived" "$(cat archive/weeks-"${TODAY%%-*}".md)" "- Ship the
 lacks "the Sunday list starts empty" "$(awk '/^## For Sunday/,0' week.md)" "drop the course"
 has "follow-ups re-passed stay" "$(awk '/^## Follow up/,/^## For Sunday/' week.md)" "Sister's exam results"
 lacks "follow-ups not re-passed go" "$(cat week.md)" "Amma's checkup"
+./life agenda "Unsettled item" >/dev/null; ./life week set --outcome "Again" --agenda "Unsettled item (carried)" >/dev/null
+has "an unsettled agenda item can be carried" "$(awk '/^## For Sunday/,0' week.md)" "- Unsettled item (carried)"
+./life ritual review >/dev/null
+printf '{"last_assistant_message": "Reply yes, then list anything else."}' | ./life gate >/dev/null 2>&1 && ok || bad "the meeting is never blocked between replies"
+has "status still shows the meeting is owed" "$(./life status)" "pending: reviewed"
+./life pending clear reviewed >/dev/null
 printf 'Agreed: %s at the Sunday meeting.\n' "$(days_ago 9)" > a.tmp
 awk -v l="$(cat a.tmp)" '/^Agreed:/{print l; next} {print}' week.md > w.tmp && mv w.tmp week.md
 has "an old week stays in force" "$(./life status)" "(9 days ago), still in force"
