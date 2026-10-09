@@ -588,10 +588,14 @@ lacks "follow-ups not re-passed go" "$(cat week.md)" "Amma's checkup"
 printf 'Agreed: %s at the Sunday meeting.\n' "$(days_ago 9)" > a.tmp
 awk -v l="$(cat a.tmp)" '/^Agreed:/{print l; next} {print}' week.md > w.tmp && mv w.tmp week.md
 has "an old week stays in force" "$(./life status)" "(9 days ago), still in force"
+echo $(( $(date +%s) - 2 * 86400 )) > .life/last-weekly-review
+has "a Sunday two days after setup says the meeting is today" "$(LIFE_DOW=7 ./life status)" "review: Sunday, so the weekly meeting is today"
+lacks "a weekday two days after setup does not" "$(LIFE_DOW=5 ./life status)" "weekly meeting is today"
 echo $(( $(date +%s) - 6 * 86400 )) > .life/last-weekly-review
 has "Sunday picks the meeting" "$(LIFE_DOW=7 ./life ritual)" "ritual: review (Sunday: the weekly meeting)"
 ./life reviewed >/dev/null
 lacks "after the meeting, Sunday is a normal day" "$(LIFE_DOW=7 ./life ritual)" "ritual: review"
+lacks "after the meeting, status stops calling it" "$(LIFE_DOW=7 ./life status)" "weekly meeting is today"
 
 # --- resume: back after a gap
 fresh setup

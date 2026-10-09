@@ -796,7 +796,8 @@ cmd_status() {
     echo "queue: queue.md is a pointer to another app:"; sed -n '1,5p' queue.md | sed 's/^/  /'
   fi
   rd="$(review_days)"
-  if [ "$rd" = none ]; then echo "review: none yet (offer when ready)"
+  if [ "$DOW" = 7 ] && [ "$rd" != 0 ]; then echo "review: Sunday, so the weekly meeting is today; open with it (./life ritual review), never a normal day"
+  elif [ "$rd" = none ]; then echo "review: none yet (offer when ready)"
   elif [ "$rd" -ge 7 ]; then echo "review: due (last $rd days ago)"
   else echo "review: not due (last $rd days ago)"; fi
   pending_hint
