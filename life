@@ -438,6 +438,8 @@ autosave() {
   git rev-parse --git-dir >/dev/null 2>&1 || return 0
   is_template && return 0
   gd="$(git rev-parse --git-dir)"
+  # inside an agent sandbox .git can be read-only (Codex); the Stop hook runs outside it and saves then
+  { : > "$gd/.autosave-probe"; } 2>/dev/null && rm -f "$gd/.autosave-probe" || return 0
   if [ -f "$gd/MERGE_HEAD" ] || [ -d "$gd/rebase-merge" ] || [ -d "$gd/rebase-apply" ] || [ -f "$gd/CHERRY_PICK_HEAD" ] || [ -n "$(git ls-files -u)" ]; then
     autosave_block "a merge or rebase is in progress; nothing saved until it is finished (git status shows it)"; return 0
   fi
