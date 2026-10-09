@@ -481,6 +481,8 @@ git config life.personal "$HOME/life"
 has "dev note points to the personal copy" "$(./life status)" "personal ALFRED: $HOME/life"
 git remote set-url origin https://github.com/hafeezhmha/life-os
 has "https origin is the template too" "$(./life status)" "dev:"
+git remote set-url origin git@github.com:hafeezhmha/alfred.git
+has "the renamed repo is the template" "$(./life status)" "dev:"
 git remote set-url origin git@github.com:kavya/life-os.git
 lacks "a copy made from the template is not" "$(./life status)" "dev:"
 
