@@ -16,8 +16,8 @@ Otherwise run `./life ritual` first; its first line decides, not you:
 - `ritual: setup`: run the `life-architect` skill (quick start, 3 questions).
   Any other answer means setup is finished: never start it again, even if
   "About the person" is short or a `learn:` line is showing.
-- They asked for one ("wrap up", "review", "plan my day"): `./life ritual
-  wrap-up` / `review` / `plan-day` instead.
+- They asked for one ("wrap up", "Sunday meeting" or "review", "plan my
+  day"): `./life ritual wrap-up` / `review` / `plan-day` instead.
 - Otherwise follow the ritual it printed. It also says whether a weekly
   review is due (offer it, don't start it).
 

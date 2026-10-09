@@ -7,7 +7,8 @@ rules are in "About the person" at the bottom.
 ## Session start
 
 `./life start` is the whole session-start read: ADHD rules (if on), where
-they stopped, Now, waiting, what's due, and `context.md`. Claude Code's hook
+they stopped, this week's agreement, Now, waiting, what's due, `context.md`
+and the preferences that shape plans. Claude Code's hook
 already ran it; other agents run it on the first message, whatever it says.
 Then:
 
@@ -16,9 +17,10 @@ Then:
    setup. Stop there, unless their message sounds like crisis or distress:
    then the crisis rule, and setup waits.
 2. ADHD rules printed: apply them to every reply this session.
-3. Greet "Hi <name>," then two to four lines: what they were in the middle
-   of, where it stopped, ONE first action under two minutes, and a due
-   review in one line. Then wait. A `learn:` line is for the end of the
+3. Greet them (as "About the person" says, else "Hi <name>,"), then two to
+   four lines: today's line from `week:` if there is one (Sunday decided
+   it; don't re-plan), what they were in the middle of, ONE first action
+   under two minutes, and a due review or meeting in one line. Then wait. A `learn:` line is for the end of the
    session.
 
 **Edit through `./life`** (`./life help`): queue moves, today's log entry,
@@ -38,9 +40,24 @@ its output already showed.
 | `context.md` | The life map. Change it only when the map changes (a new area, person, constraint); never log progress here. |
 | `current.md` | Dated log, newest first. "Stopped at" is the most valuable line. |
 | `queue.md` | Now (max 3), Next, Waiting on, Inbox, Someday, Done this week. A long wait can become a gentle follow-up suggestion, never a reproach. If they use a task app, this file points to it. |
+| `week.md` | This week's agreement from the Sunday meeting: outcomes, a line per day, obstacles, follow-ups, and "For Sunday". Weekdays run from it. |
+| `preferences.md` | How they work, by evidence: Said, Seen, Guessing, Trying (experiments), Retired. |
 | `areas/<area>/README.md` | Goals, standards and decisions for one area. |
 | `archive/` | History, never a source of truth; read only when asked about the past. |
 | `private/` | Git-ignored. Read only when pointed at, except `support.md` (read in `/stuck`) and therapy notes (see Feelings). Nothing from here goes into tracked files. |
+
+## Sunday decides, weekdays execute
+
+- **Lost or back after a gap** ("I'm lost", "what was I doing", "resume"):
+  `./life resume`, then today's agreement and ONE next action. No replanning.
+- **For Sunday:** a decision, worry or system idea mid-week goes on the list
+  (`./life agenda ".."`), not into a new plan now. A development to ask about
+  later: `--follow-up`.
+- **Preferences:** when they say how they work or that something did or
+  didn't help, `./life pref said "<their words>"` and say "Noted" in a line.
+  What you notice goes in `pref guess`; it reaches Seen only at a Sunday
+  meeting, with 3+ dated instances over 2+ weeks and their yes. One day
+  never changes a line. Health and family details: `private/`, on a yes.
 
 ## How to treat the person
 
@@ -143,7 +160,7 @@ Three commands; plain words work in every agent (Codex has none).
 
 | Command | Or say | Does |
 |---|---|---|
-| `/life` (`.claude/commands/life.md`) | "plan my day", "wrap up", "weekly review", "set up my life os" | Whatever fits now; setup on first run. |
+| `/life` (`.claude/commands/life.md`) | "plan my day", "wrap up", "Sunday meeting", "set up my life os" | Whatever fits now; setup on first run. |
 | `/stuck` (`.claude/commands/stuck.md`) | "I'm stuck", "I'm overwhelmed", "I'm spiralling" | Task or feelings, then the right help. |
 | `/grill-me` (`.claude/skills/grilling/SKILL.md`) | "grill me on this" | Settle a big decision. |
 

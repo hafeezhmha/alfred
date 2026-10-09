@@ -13,7 +13,8 @@ TODAY="$(date +%Y-%m-%d)"
 fresh() { # new sandbox with the template; "setup" also applies the Kavya example
   T="$(mktemp -d)"
   cp -R "$REPO/life" "$REPO/AGENTS.md" "$REPO/CLAUDE.md" "$REPO/context.md" \
-    "$REPO/current.md" "$REPO/queue.md" "$REPO/.life" "$REPO/.claude" "$REPO/areas" "$T/"
+    "$REPO/current.md" "$REPO/queue.md" "$REPO/week.md" "$REPO/preferences.md" \
+    "$REPO/.life" "$REPO/.claude" "$REPO/areas" "$T/"
   if [ "${1:-}" = setup ]; then
     rm "$T/.life/SETUP_NEEDED"; cp "$REPO"/examples/kavya/*.md "$T/"
     # a set-up copy has its "About the person" section filled in
@@ -493,6 +494,13 @@ out="$(./life guard 2>&1)"; rc=$?
 has "guard names the setup marker" "$out" "SETUP_NEEDED is deleted"
 has "guard names AGENTS.md" "$out" 'AGENTS.md has a filled-in "About the person"'
 has "guard says the fix" "$out" "git restore --staged"
+git restore --staged AGENTS.md .life/SETUP_NEEDED && git restore AGENTS.md .life/SETUP_NEEDED
+has "pref refused in the template" "$(./life pref said "cafes" 2>&1)" "personal writes go in a personal copy"
+printf -- '- cafes\n' >> preferences.md; git add preferences.md
+has "guard blocks real preferences" "$(./life guard 2>&1)" "preferences.md holds real preferences"
+git restore --staged preferences.md && git restore preferences.md
+printf -- '- Mon: cafe\n' >> week.md; git add week.md
+has "guard blocks a real week" "$(./life guard 2>&1)" "week.md holds a real week"
 git remote set-url origin git@github.com:kavya/life-os.git
 out="$(./life guard 2>&1)" && ok || bad "guard is silent in a personal copy" "$out"
 
@@ -530,6 +538,88 @@ git update-ref refs/remotes/origin/main HEAD; ./life add "after a push" >/dev/nu
 ./life pending clear >/dev/null; touch .life/autosave-off; ./life gate </dev/null >/dev/null
 [ "$(commits)" = $((n + 1)) ] && ok || bad "autosave-off stops it"
 [ -x "$REPO/.github/hooks/pre-commit" ] && ok || bad "pre-commit hook is executable"
+
+# --- the week: Sunday decides, weekdays confirm
+fresh setup
+has "no week yet" "$(./life status)" "week: not agreed yet"
+out="$(./life week set --day "Mon: cafe" 2>&1)"; rc=$?; [ $rc = 2 ] && ok || bad "week set needs an outcome" "$out"
+out="$(./life week set --outcome a --outcome b --outcome c --outcome d 2>&1)"; has "at most 3 outcomes" "$out" "at most 3 outcomes"
+out="$(./life week set --outcome a --day "Someday: x" 2>&1)"; has "day starts with the day" "$out" "--day starts with the day"
+out="$(./life week set --outcome "Ship the deck" --outcome "Two gym sessions" --day "Mon: cafe, deck first, gym 18:00" \
+  --day "Tue: home, admin block" --obstacle "If the late call runs over, then start at 11" --follow "Amma's checkup" --win "Kept Sunday")"
+has "week set ok" "$out" "ok: week.md agreed for the week from $TODAY (2 outcome(s))"
+has "week set logs the review" "$out" "review logged in current.md"
+has "week set says Monday" "$out" "Monday's first action"
+w="$(cat week.md)"
+has "week.md agreed line" "$w" "Agreed: $TODAY at the Sunday meeting"
+has "week.md outcome" "$(awk '/^## Outcomes/,/^## Days/' week.md)" "- Ship the deck"
+has "week.md days" "$(awk '/^## Days/,/^## Obstacles/' week.md)" "- Tue: home, admin block"
+has "week.md follow up" "$(awk '/^## Follow up/,/^## For Sunday/' week.md)" "- Amma's checkup"
+has "week.md keeps its descriptions" "$w" "One line per day"
+has "review log has the focus" "$(awk '/^## 20/{n++} n==1' current.md)" "Ship the deck; Two gym sessions"
+has "status shows the week" "$(LIFE_DOW=1 ./life status)" "week: agreed $TODAY (0 days ago)"
+has "status shows outcomes" "$(./life status)" "outcomes: Ship the deck; Two gym sessions"
+has "status shows today's line" "$(LIFE_DOW=2 ./life status)" "today: Tue: home, admin block"
+has "a day with no line says so" "$(LIFE_DOW=3 ./life status)" "today (Wed): nothing agreed; Now is the plan"
+has "agenda" "$(./life agenda "Should I drop the course?")" "ok: on Sunday's list (For Sunday)"
+./life agenda --follow-up "Sister's exam results" >/dev/null
+has "agenda lands in For Sunday" "$(awk '/^## For Sunday/,0' week.md)" "- Should I drop the course? ($TODAY)"
+has "follow-up lands in Follow up" "$(awk '/^## Follow up/,/^## For Sunday/' week.md)" "- Sister's exam results ($TODAY)"
+has "status counts the Sunday list" "$(./life status)" "for_sunday: 1 item(s)"
+has "week prints the lists" "$(./life week)" "for_sunday:
+  Should I drop the course? ($TODAY)"
+has "review packet has last week" "$(./life review)" "last_week: agreed $TODAY"
+has "review packet has the Sunday list" "$(./life review)" "Should I drop the course?"
+./life week set --outcome "Next week" --follow "Sister's exam results" >/dev/null
+has "last week is archived" "$(cat archive/weeks-"${TODAY%%-*}".md)" "- Ship the deck"
+lacks "the Sunday list starts empty" "$(awk '/^## For Sunday/,0' week.md)" "drop the course"
+has "follow-ups re-passed stay" "$(awk '/^## Follow up/,/^## For Sunday/' week.md)" "Sister's exam results"
+lacks "follow-ups not re-passed go" "$(cat week.md)" "Amma's checkup"
+printf 'Agreed: %s at the Sunday meeting.\n' "$(days_ago 9)" > a.tmp
+awk -v l="$(cat a.tmp)" '/^Agreed:/{print l; next} {print}' week.md > w.tmp && mv w.tmp week.md
+has "an old week stays in force" "$(./life status)" "(9 days ago), still in force"
+echo $(( $(date +%s) - 6 * 86400 )) > .life/last-weekly-review
+has "Sunday picks the meeting" "$(LIFE_DOW=7 ./life ritual)" "ritual: review (Sunday: the weekly meeting)"
+./life reviewed >/dev/null
+lacks "after the meeting, Sunday is a normal day" "$(LIFE_DOW=7 ./life ritual)" "ritual: review"
+
+# --- resume: back after a gap
+fresh setup
+./life week set --outcome "Ship the deck" --day "Mon: cafe, deck first" >/dev/null
+out="$(LIFE_DOW=1 ./life resume)"
+has "resume shows today" "$out" "today: Mon: cafe, deck first"
+has "resume shows Now" "$out" "n1 Retry tests from case 3"
+has "resume shows where they stopped" "$out" "stopped: $TODAY"
+has "resume says no replanning" "$out" "no replanning"
+fresh
+out="$(./life resume 2>&1)"; rc=$?; [ $rc = 2 ] && ok || bad "resume before setup" "$out"
+
+# --- preferences by evidence
+fresh setup
+has "pref said" "$(./life pref said "I work better in cafes")" "ok: Said: I work better in cafes"
+./life pref guess "Mornings after a late call go badly" >/dev/null
+has "pref lands in Said" "$(awk '/^## Said/,/^## Seen/' preferences.md)" "- I work better in cafes ($TODAY)"
+has "pref lands in Guessing" "$(awk '/^## Guessing/,/^## Trying/' preferences.md)" "- Mornings after a late call go badly"
+out="$(./life pref try "Body double for admin" 2>&1)"; has "try needs a measure" "$out" "usage: ./life pref try"
+out="$(./life pref try "Body double for admin" --check soon --measure "admin gets started" 2>&1)"; has "try needs a date" "$out" "--check needs a date"
+./life pref try "Body double for admin" --check "$(days_ago 1)" --measure "admin gets started" >/dev/null
+./life pref try "Phone in another room" --check 2099-01-01 --measure "fewer YouTube detours" >/dev/null
+out="$(./life pref try "Third" --check 2099-01-01 --measure x 2>&1)"; has "at most 2 experiments" "$out" "2 experiments are running"
+has "a due experiment shows" "$(./life status)" "experiment due (verdict at the Sunday meeting): Body double for admin"
+lacks "a future experiment doesn't" "$(./life status)" "due (verdict at the Sunday meeting): Phone in another room"
+has "review packet has it" "$(./life review)" "experiment due: Body double"
+has "start shows what shapes plans" "$(./life start)" "said: I work better in cafes"
+lacks "start leaves out guesses" "$(./life start)" "late call go badly"
+out="$(./life pref move "a" retired 2>&1)"; has "move needs a unique line" "$out" "more than one line"
+has "pref move" "$(./life pref move "body double" seen --why "admin got done 3 times")" "ok: moved to Seen"
+has "moved line keeps its history" "$(awk '/^## Seen/,/^## Guessing/' preferences.md)" "[to Seen $TODAY: admin got done 3 times]"
+lacks "moved line left Trying" "$(awk '/^## Trying/,/^## Retired/' preferences.md)" "Body double"
+has "pref lists" "$(./life pref)" "trying:
+  Phone in another room"
+fresh; LIFE_DOW=5 ./life setup --name K --thing x --adhd trial >/dev/null
+has "adhd trial is an experiment" "$(awk '/^## Trying/,/^## Retired/' preferences.md)" "ADHD-shaped replies"
+has "the trial is judged on a Sunday a week or more away" "$(cat preferences.md)" "check $(date -d '+9 days' +%Y-%m-%d 2>/dev/null || date -v+9d +%Y-%m-%d)"
+has "about the person points to it" "$(cat AGENTS.md)" "as an experiment in preferences.md"
 
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"

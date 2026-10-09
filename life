@@ -484,6 +484,10 @@ cmd_guard() { # pre-commit hook in the template's development clone: git config 
   current.md has lost its template entry (a real log)"; fi
   if has_staged queue.md && ! git show :queue.md | grep -q 'to set up Life OS'; then why="$why
   queue.md has lost its setup item (a real queue)"; fi
+  if has_staged week.md && { ! git show :week.md | grep -q '^Agreed: not yet' || git show :week.md | grep -q '^- '; }; then why="$why
+  week.md holds a real week"; fi
+  if has_staged preferences.md && git show :preferences.md | grep -q '^- '; then why="$why
+  preferences.md holds real preferences"; fi
   [ -n "$why" ] || return 0
   echo "guard: this is the public Life OS template, and this commit carries a personal Life OS:$why" >&2
   echo "fix: git restore --staged <file> (and git restore <file> to undo it). Personal data belongs in a private copy." >&2
@@ -540,6 +544,7 @@ review_days() { # days since the last weekly review, or "none"
 
 ritual_pick() { # prints "name<TAB>reason"
   if [ -f .life/SETUP_NEEDED ]; then printf 'setup\tnot set up yet\n'; return; fi
+  if [ "$DOW" = 7 ] && [ "$(review_days)" != 0 ]; then printf 'review\tSunday: the weekly meeting\n'; return; fi
   mid="$(cat .life/midpoint 2>/dev/null | tr -dc '0-9:' || true)"; [ -n "$mid" ] || mid="15:00"
   nowm=$((10#$(date +%H) * 60 + 10#$(date +%M))); midm=$((10#${mid%:*} * 60 + 10#${mid#*:}))
   planned=""; [ "$(cat .life/last-plan 2>/dev/null)" = "$TODAY" ] && planned=1
@@ -569,18 +574,183 @@ cmd_ritual() {
   f="$(ritual_file "$name")"; echo "file: $f"; echo "---"; cat "$f"
 }
 
-# ---------- status and start ----------
-cmd_status() {
-  adhd=off; [ -f .claude/.adhd-always ] && adhd=on
-  echo "life: $(date '+%a %Y-%m-%d %H:%M') · adhd $adhd"
-  if is_template; then template_note; return 0; fi
-  if [ -f .life/SETUP_NEEDED ]; then
-    echo "Not set up yet. Type /life (Claude Code, OpenCode) or say \"set up my life os\" (Codex). About 3 minutes."
-    [ -f .life/setup-progress.md ] && echo "setup: paused; progress saved in .life/setup-progress.md (offer to resume)"
-    echo "next:"
-    echo "  run the life-architect skill, quick start (3 questions)"
-    return 0
+# ---------- the week: what the Sunday meeting agreed ----------
+# week.md holds this week's agreement; weekdays confirm it instead of
+# re-planning. preferences.md holds how they work, sorted by evidence.
+DOW="${LIFE_DOW:-$(date +%u)}"   # 1 Monday .. 7 Sunday (LIFE_DOW for tests)
+day_name() { echo "Mon Tue Wed Thu Fri Sat Sun" | cut -d' ' -f"$1"; }
+add_days() { date -d "+$1 days" +%Y-%m-%d 2>/dev/null || date -v+"$1"d +%Y-%m-%d; }
+items() { section "$1" "$2" | grep '^- ' | sed 's/^- //' || true; }   # the "- " lines of one section
+week_agreed() { [ -f week.md ] && sed -n 's/^Agreed: \(20[0-9][0-9]-[01][0-9]-[0-3][0-9]\).*/\1/p' week.md | head -1 || true; }
+personal_only() { is_template && die "this is the public Life OS template (dev mode); personal writes go in a personal copy" || true; }
+need_file() { [ -f "$1" ] || die "no $1 here. restore it from the template: git checkout upstream/main -- $1 (or copy it from the template repo)"; }
+
+md_append() { # md_append file "Section" "- line": the line goes at the end of that section
+  tmp="$(mktemp)"
+  L="$3" H="## $2" awk '
+    BEGIN { l = ENVIRON["L"] }
+    { h = $0; sub(/\r$/, "", h) }
+    h ~ /^## / { if (in_s && !done) { print l; print ""; done=1; blanks=0 } in_s = (h == ENVIRON["H"]) }
+    { if (in_s && h ~ /^[[:space:]]*$/) { blanks++; next }
+      while (blanks > 0) { print ""; blanks-- }
+      print }
+    END { if (in_s && !done) { print l; done=1 } if (!done) exit 3 }
+  ' "$1" > "$tmp" || { rm -f "$tmp"; die "no '## $2' section in $1; add that line first"; }
+  mv "$tmp" "$1"
+}
+
+week_info() { # status lines: when the week was agreed, its outcomes, today's line
+  [ -f week.md ] || return 0
+  a="$(week_agreed)"
+  if [ -z "$a" ]; then echo "week: not agreed yet (the Sunday meeting sets it: ./life ritual review)"; return 0; fi
+  ago="$(T="$TODAY" A="$a" awk "$DAYFN"' BEGIN { print day(ENVIRON["T"]) - day(ENVIRON["A"]) }')"
+  if [ "$ago" -ge 8 ]; then echo "week: agreed $a ($ago days ago), still in force; offer the 10-minute meeting, never \"you missed\""
+  else echo "week: agreed $a ($ago days ago)"; fi
+  o="$(items week.md Outcomes | awk '{ printf "%s%s", (NR > 1 ? "; " : ""), $0 }')"
+  [ -z "$o" ] || echo "  outcomes: $o"
+  t="$(items week.md Days | grep -i "^$(day_name "$DOW")" | head -1 || true)"
+  if [ -n "$t" ]; then echo "  today: $t"; else echo "  today ($(day_name "$DOW")): nothing agreed; Now is the plan"; fi
+  n="$(items week.md "For Sunday" | grep -c . || true)"; [ "$n" = 0 ] || echo "  for_sunday: $n item(s)"
+}
+
+exp_due() { # Trying lines whose check date has come
+  [ -f preferences.md ] || return 0
+  items preferences.md Trying | awk -v t="$TODAY" 'match($0, /check 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/) { if (substr($0, RSTART + 6, 10) <= t) print }'
+}
+
+cmd_week() {
+  need_file week.md
+  case "${1:-}" in
+    "") week_info
+        for s in Days Obstacles "Follow up" "For Sunday"; do
+          v="$(items week.md "$s")"; [ -z "$v" ] || { echo "$(printf '%s' "$s" | tr 'A-Z ' 'a-z_'):"; printf '%s\n' "$v" | sed 's/^/  /'; }
+        done ;;
+    set) shift; week_set "$@" ;;
+    *) die 'usage: ./life week [set --outcome ".." --day "Mon: .." --obstacle ".." --follow ".." --win ".."]' ;;
+  esac
+}
+
+week_set() { # the Sunday meeting's one write: new week.md, last week archived, review logged
+  personal_only
+  outs=""; days=""; obs=""; fol=""; no=0
+  set_args=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --outcome|--day|--obstacle|--follow|--win) [ $# -ge 2 ] || die "$1 needs a value"
+        v="$(printf '%s' "$2" | tr '\r\n\t' '   ')"
+        case "$1" in
+          --outcome) outs="$outs- $v"$'\n'; no=$((no + 1)); set_args="$set_args--focus"$'\036'"$v"$'\036' ;;
+          --day) case "$v" in Mon*|Tue*|Wed*|Thu*|Fri*|Sat*|Sun*) ;; *) die "--day starts with the day, e.g. --day \"Mon: cafe, the deck first, gym 18:00\"";; esac
+                 days="$days- $v"$'\n' ;;
+          --obstacle) obs="$obs- $v"$'\n' ;;
+          --follow) fol="$fol- $v"$'\n' ;;
+          --win) set_args="$set_args--win"$'\036'"$v"$'\036' ;;
+        esac; shift 2 ;;
+      *) die "unknown flag '$1'. flags: --outcome (1 to 3) --day --obstacle --follow --win, each repeatable" ;;
+    esac
+  done
+  [ "$no" -ge 1 ] || die 'at least one --outcome, e.g. ./life week set --outcome "send the proposal" --day "Mon: cafe, proposal first"'
+  [ "$no" -le 3 ] || die "at most 3 outcomes; ask which can wait"
+  for h in Outcomes Days Obstacles "Follow up" "For Sunday"; do
+    grep -qE "^## $h"$'\r'"?\$" week.md || die "week.md has no '## $h' section; add that line first"
+  done
+  a="$(week_agreed)"
+  if [ -n "$a" ]; then # last week's agreement is kept, never lost
+    mkdir -p archive; f="archive/weeks-${a%%-*}.md"
+    [ -f "$f" ] || printf '# Weeks, %s\n\nPast weekly agreements from week.md, oldest first.\n' "${a%%-*}" > "$f"
+    { echo; echo "## Week agreed $a"; echo; awk '{sub(/\r$/, "")} /^## /{f=1} f && (/^## / || /^- /)' week.md; } >> "$f"
   fi
+  tmp="$(mktemp)"
+  O="$outs" D="$days" B="$obs" F="$fol" A="Agreed: $TODAY at the Sunday meeting. In force until the next one." awk '
+    function flush(   v) { if (sec == "Outcomes") v = ENVIRON["O"]; else if (sec == "Days") v = ENVIRON["D"]
+      else if (sec == "Obstacles") v = ENVIRON["B"]; else if (sec == "Follow up") v = ENVIRON["F"]
+      if (v != "") printf "\n%s", v }
+    { sub(/\r$/, "") }
+    /^# / && !sec { print; print ""; next }
+    /^Agreed:/ { print ""; print ENVIRON["A"]; next }
+    /^## / { flush(); print ""; sec = substr($0, 4); print; print ""; next }
+    sec != "" && /^- / { next }
+    /^[ \t]*$/ { next }
+    { print }
+    END { flush() }' week.md | cat -s > "$tmp"
+  mv "$tmp" week.md
+  echo "ok: week.md agreed for the week from $TODAY ($no outcome(s))${a:+; last week kept in archive/weeks-${a%%-*}.md}"
+  IFS=$'\036' read -r -a ra <<< "$set_args" || true
+  cmd_reviewed "${ra[@]}" | sed 's/^/  /'
+  echo "next:"
+  echo "  put Monday's first item in Now (./life plan <ids>) and end with Monday's first action, under two minutes"
+}
+
+cmd_agenda() { # agenda "thing" [--follow-up]: onto week.md, for the next Sunday meeting
+  sec="For Sunday"
+  case "${1:-}" in --follow-up) sec="Follow up"; shift;; esac
+  case "${!#:-}" in --follow-up) sec="Follow up"; set -- "${@:1:$(($#-1))}";; esac
+  [ $# -gt 0 ] || die 'usage: ./life agenda "thing to bring up on Sunday" [--follow-up]'
+  personal_only; need_file week.md
+  text="$(printf '%s' "$*" | tr '\r\n\t' '   ')"
+  md_append week.md "$sec" "- $text ($TODAY)"
+  echo "ok: on Sunday's list ($sec): $text"
+}
+
+pref_section() { case "$1" in said) echo Said;; seen) echo Seen;; guess|guessing) echo Guessing;; try|trying) echo Trying;; retired|retire) echo Retired;; *) return 1;; esac; }
+
+cmd_pref() { # how they work, by evidence
+  need_file preferences.md
+  case "${1:-}" in said|seen|guess|try|move) personal_only ;; esac
+  case "${1:-}" in
+    "") for s in Said Seen Guessing Trying Retired; do
+          v="$(items preferences.md "$s")"; [ -z "$v" ] || { echo "$(printf '%s' "$s" | tr 'A-Z' 'a-z'):"; printf '%s\n' "$v" | sed 's/^/  /'; }
+        done
+        ed="$(exp_due)"; [ -z "$ed" ] || printf '%s\n' "$ed" | sed 's/^/experiment due: /' ;;
+    said|seen|guess)
+      sec="$(pref_section "$1")"; shift
+      [ $# -gt 0 ] || die "usage: ./life pref $(printf '%s' "$sec" | tr 'A-Z' 'a-z' | sed 's/guessing/guess/') \"in their words\""
+      text="$(printf '%s' "$*" | tr '\r\n\t' '   ')"
+      md_append preferences.md "$sec" "- $text ($TODAY)"
+      echo "ok: $sec: $text" ;;
+    try) shift; text=""; check=""; measure=""
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --check|--measure) [ $# -ge 2 ] || die "$1 needs a value"
+            if [ "$1" = --check ]; then check="$2"; else measure="$(printf '%s' "$2" | tr '\r\n\t' '   ')"; fi; shift 2 ;;
+          *) text="$text${text:+ }$(printf '%s' "$1" | tr '\r\n\t' '   ')"; shift ;;
+        esac
+      done
+      [ -n "$text" ] && [ -n "$measure" ] || die 'usage: ./life pref try "what" --check YYYY-MM-DD --measure "what helped means, in their words"'
+      case "$check" in 20[0-9][0-9]-[01][0-9]-[0-3][0-9]) ;; *) die "--check needs a date, YYYY-MM-DD (a Sunday meeting, about 1 to 2 weeks out)";; esac
+      n="$(items preferences.md Trying | grep -c . || true)"
+      [ "$n" -lt 2 ] || die "2 experiments are running already (at most 2). settle one first: ./life pref move \"<words from it>\" retired|seen|said --why \"..\""
+      md_append preferences.md Trying "- $text. Since $TODAY, check $check. Helped means: $measure"
+      echo "ok: Trying: $text (check $check)" ;;
+    move) shift
+      [ $# -ge 2 ] || die 'usage: ./life pref move "<words from the line>" said|seen|guessing|trying|retired [--why ".."]'
+      needle="$1"; sec="$(pref_section "$2")" || die "unknown section '$2' (said, seen, guessing, trying, retired)"; shift 2
+      why=""; [ "${1:-}" = --why ] && { [ $# -ge 2 ] || die "--why needs a value"; why="$(printf '%s' "$2" | tr '\r\n\t' '   ')"; }
+      hits="$(N="$needle" awk '{ l = $0; sub(/\r$/, "", l) } l ~ /^- / && index(tolower(l), tolower(ENVIRON["N"])) { print NR "\t" l }' preferences.md)"
+      [ -n "$hits" ] || die "no line in preferences.md contains '$needle'"
+      [ "$(printf '%s\n' "$hits" | grep -c .)" = 1 ] || die "more than one line contains '$needle'; quote more of it"
+      ln="$(printf '%s' "$hits" | cut -f1)"; line="$(printf '%s' "$hits" | cut -f2-)"
+      tmp="$(mktemp)"; awk -v n="$ln" 'NR != n' preferences.md > "$tmp"; mv "$tmp" preferences.md
+      md_append preferences.md "$sec" "$line [to $sec $TODAY${why:+: $why}]"
+      echo "ok: moved to $sec: ${line#- }" ;;
+    *) die 'usage: ./life pref [said|seen|guess "text" | try "text" --check YYYY-MM-DD --measure ".." | move "<words>" <section> [--why ".."]]' ;;
+  esac
+}
+
+cmd_resume() { # back after a gap or a drift: the agreement, the focus, where they stopped
+  is_template && die "this is the public Life OS template (dev mode); resume runs in a personal copy"
+  [ -f .life/SETUP_NEEDED ] && die "not set up yet. run the life-architect skill, quick start"
+  echo "resume: $(date '+%a %H:%M')"
+  week_info
+  q_load; q_list n
+  stopped_info
+  echo "next:"
+  echo "  in two or three lines: today's agreement, where they stopped, ONE next action under two minutes (today's stopped-at point, else n1's first step)"
+  echo "  no replanning. a change of course is fine; if it matters for Sunday: ./life agenda \"..\""
+}
+
+# ---------- status and start ----------
+stopped_info() { # where they stopped: the top current.md entry
   T="$TODAY" awk "$DAYFN"'
     { sub(/\r$/, "") }
     /^```/ { fence = !fence; next }
@@ -601,6 +771,21 @@ cmd_status() {
           if (sd != "") print "  said: " sd
           if (en != "") print "  energy: " en }
   ' current.md
+}
+
+cmd_status() {
+  adhd=off; [ -f .claude/.adhd-always ] && adhd=on
+  echo "life: $(date '+%a %Y-%m-%d %H:%M') · adhd $adhd"
+  if is_template; then template_note; return 0; fi
+  if [ -f .life/SETUP_NEEDED ]; then
+    echo "Not set up yet. Type /life (Claude Code, OpenCode) or say \"set up my life os\" (Codex). About 3 minutes."
+    [ -f .life/setup-progress.md ] && echo "setup: paused; progress saved in .life/setup-progress.md (offer to resume)"
+    echo "next:"
+    echo "  run the life-architect skill, quick start (3 questions)"
+    return 0
+  fi
+  stopped_info
+  week_info
   if grep -q '^# Queue' queue.md 2>/dev/null; then
     q_load; q_list n
     [ "$(q_count w)" = 0 ] || q_list w
@@ -613,6 +798,7 @@ cmd_status() {
   elif [ "$rd" -ge 7 ]; then echo "review: due (last $rd days ago)"
   else echo "review: not due (last $rd days ago)"; fi
   pending_hint
+  exp_due | sed 's/^/experiment due (verdict at the Sunday meeting): /'
   [ -f "$AUTOSAVE_BLOCKED" ] && echo "autosave: paused, $(cat "$AUTOSAVE_BLOCKED")"
   lr="$(learn_due)"; [ -z "$lr" ] || echo "learn: $(printf '%s' "$lr" | cut -f1) \"$(printf '%s' "$lr" | cut -f2)\" (end of session only: ./life learn)"
   rp="$(ritual_pick)"; echo "ritual: $(printf '%s' "$rp" | cut -f1) ($(printf '%s' "$rp" | cut -f2))"
@@ -633,6 +819,10 @@ cmd_start() { # the whole session-start read, in one call, for every agent
   date +%Y-%m-%d > .life/last-start # a session happened today, so no nudge
   echo "context:"
   awk '{sub(/\r$/, "")} /^## /{f=1} f' context.md | sed '/^$/d; s/^/  /'
+  if [ -f preferences.md ]; then
+    p="$(for k in Said Seen Trying; do items preferences.md "$k" | sed "s/^/  $(printf '%s' "$k" | tr 'A-Z' 'a-z'): /"; done)"
+    [ -z "$p" ] || { echo "preferences:"; printf '%s\n' "$p"; }
+  fi
 }
 
 NUDGE_CONF=".life/nudge"
@@ -719,6 +909,18 @@ cmd_review() { # the weekly review packet, one read
   q_load
   rd="$(review_days)"; if [ "$rd" = none ]; then rl="first review"; else rl="last $rd days ago"; fi
   echo "review: week to $TODAY ($rl)"
+  if [ -f week.md ]; then
+    a="$(week_agreed)"; echo "last_week: ${a:+agreed $a}${a:-none agreed yet (first meeting: ask what is outstanding instead)}"
+    for k in Outcomes Days Obstacles "Follow up" "For Sunday"; do
+      v="$(items week.md "$k")"; [ -z "$v" ] || { echo "  $(printf '%s' "$k" | tr 'A-Z ' 'a-z_'):"; printf '%s\n' "$v" | sed 's/^/    /'; }
+    done
+  fi
+  exp_due | sed 's/^/experiment due: /'
+  st="$(printf '%s\n' "$QITEMS" | T="$TODAY" awk -F'\t' "$DAYFN"'
+    ($1 == "i" || $1 == "w") && match($4, /20[0-9][0-9]-[01][0-9]-[0-3][0-9]/) {
+      a = day(ENVIRON["T"]) - day(substr($4, RSTART, 10))
+      if (($1 == "i" && a >= 21) || ($1 == "w" && a >= 14)) printf "  %s%d %d days: %s\n", $1, $2, a, $4 }')"
+  [ -z "$st" ] || { echo "stale (offer: do, renegotiate, Someday, or drop; never a reproach):"; printf '%s\n' "$st"; }
   q_list d
   echo "log_this_week:"
   T="$TODAY" awk "$DAYFN"'
@@ -740,8 +942,8 @@ cmd_review() { # the weekly review packet, one read
   [ "$found" = 1 ] || echo "  none yet"
   echo "therapy_notes_this_week: $(therapy_count) (say the number only, and only if others don't see their screen)"
   echo "next:"
-  echo "  show wins (done + log), then sort the inbox: ./life move <ids> <section> after their yes"
-  echo "  finish: ./life reviewed --focus \"a\" [--focus \"b\"] [--win \"extra win\"]..."
+  echo "  follow the Sunday meeting ritual (.claude/rituals/weekly-review.md); a conversation, not a checklist"
+  echo "  finish: ./life week set --outcome \"a\" --day \"Mon: ..\" ... (2-minute version: ./life reviewed --focus \"a\")"
 }
 
 cmd_reviewed() { # no flags: stamp only. With --focus/--win: log the review, clear Done, stamp, archive.
@@ -822,7 +1024,12 @@ cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first 
   cmd_log --topic "Life OS started" --done "Quick start: three questions" --stopped "${step:-$thing}" >/dev/null
 
   # AGENTS.md: the personal section, between its markers only
-  mode="$adhd"; [ "$adhd" = trial ] && mode="trial for a week, ask on $(date -d '7 days' +%Y-%m-%d 2>/dev/null || date -v+7d +%Y-%m-%d) whether to keep it"
+  mode="$adhd"
+  if [ "$adhd" = trial ] && [ -f preferences.md ]; then # an experiment, judged at a Sunday meeting at least a week away
+    chk="$(add_days $((7 + (7 - DOW) % 7)))"
+    md_append preferences.md Trying "- ADHD-shaped replies (next step first, short, numbered). Since $TODAY, check $chk. Helped means: replies are easier to act on"
+    mode="on, as an experiment in preferences.md (Trying), verdict on $chk"
+  fi
   tmp="$(mktemp)"
   P="## About the person
 
@@ -941,6 +1148,10 @@ case "$CMD" in
   archive) cmd_archive ;;
   check) cmd_check ;;
   guard) cmd_guard ;;
+  week) shift; cmd_week "$@" ;;
+  agenda) shift; cmd_agenda "$@" ;;
+  pref) shift; cmd_pref "$@" ;;
+  resume) cmd_resume ;;
   nudge) shift; cmd_nudge "$@" ;;
   help|-h|--help)
     cat <<'HELP'
@@ -969,6 +1180,15 @@ log and notes
   ./life therapy-note "their words"   private, dated, never read back (only on their yes)
   ./life therapy-note --count         how many this week; the number only
   ./life learned <tN> [--skip]        after asking a learn question
+the week and how they work
+  ./life resume                   back after a gap or drift: today's agreement, Now, where they stopped
+  ./life week                     this week's agreement (outcomes, days, obstacles, follow-ups, for Sunday)
+  ./life week set --outcome ".." [--day "Mon: .."]... [--obstacle ".."]... [--follow ".."]... [--win ".."]...
+                                  the Sunday meeting's write: new week.md, last week archived, review logged
+  ./life agenda "text" [--follow-up]   onto week.md for the next Sunday meeting
+  ./life pref [said|seen|guess "text"]   preferences.md by evidence; no args lists it
+  ./life pref try "text" --check YYYY-MM-DD --measure ".."   an experiment (at most 2)
+  ./life pref move "<words>" said|seen|guessing|trying|retired [--why ".."]
 setup and review
   ./life setup --name "..." --thing "..." --adhd yes|no|trial [--step "..."]   quick-start build, one call
   ./life review                   weekly review packet: done, this week's log, inbox, areas, therapy count
