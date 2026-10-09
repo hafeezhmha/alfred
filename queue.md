@@ -2,7 +2,7 @@
 
 Every open loop, in one place, so your head doesn't have to hold them.
 Capture fast with `./life add "thing"` (it lands in Inbox). Sort later, in
-wrap-up or the weekly review. The agent never deletes or ticks off an item you
+wrap-up or the Sunday meeting. The agent never deletes or ticks off an item you
 haven't confirmed.
 
 If you move to a task app, replace this file with a pointer to it and say
@@ -33,4 +33,4 @@ Ideas and maybes. No pressure, no dates.
 
 ## Done this week
 
-Wins go here so they stay visible. Cleared at the weekly review.
+Wins go here so they stay visible. Cleared at the Sunday meeting.

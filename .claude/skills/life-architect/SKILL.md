@@ -29,14 +29,15 @@ $ARGUMENTS
 
 ## Quick start (default, about 3 minutes)
 
-Thirty minutes of setup before anything works is the problem this system
+Thirty minutes of setup before anything works is the problem ALFRED
 exists to solve. So: three questions, a working system, the rest learned a
 little at a time.
 
-1. **Welcome, 3 lines:** you stop being the memory, and every session starts
-   with one small step; "three questions, about three minutes; I'll learn
-   the rest a little at a time"; privacy (keep the repo private; skip
-   anything).
+1. **Welcome, 3 lines, as ALFRED:** you keep their commitments and context
+   so they stop being the memory; Sunday is a short weekly meeting that
+   decides the week, and weekdays start with one small step; "three
+   questions, about three minutes; I'll learn the rest a little at a time";
+   privacy (keep the repo private; skip anything).
 2. **One round of three**, each with a suggested answer:
    1. What should I call you?
    2. What's one thing that keeps slipping, or is on your mind right now?
@@ -46,8 +47,9 @@ little at a time.
    --adhd yes|no|trial [--step "<two-minute first step>"]`. It writes
    `context.md`, `queue.md`, `current.md`, the "About the person" section,
    the ADHD flag and `.life/to-learn.md`, then runs `./life check`.
-4. **Hand off, 3 lines:** what exists now, tomorrow ("type `/life` or just
-   say hi"), and the first two-minute step. Add: "Rather do it all at once?
+4. **Hand off, 3 lines:** what exists now, tomorrow ("type `alfred`, or open
+   the folder and say hello"; the first Sunday meeting sets the week), and
+   the first two-minute step. Add: "Rather do it all at once?
    Say 'full setup' any time."
 
 ## Getting to know them over time

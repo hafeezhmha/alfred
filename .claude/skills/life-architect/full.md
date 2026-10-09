@@ -166,7 +166,7 @@ trade-offs, drawn from `patterns.md` and tuned to what you learned:
 2. **Queue**: `queue.md`, or a pointer to a task app they already open daily,
    or paper + weekly transcription. Where their eyes already go wins.
 3. **Rituals**: which parts of `/life` they want (planning the day, wrapping
-   up, the weekly review), and how small. A 2-minute version they do beats a 20-minute one they skip.
+   up, the Sunday meeting), and how small. A 2-minute version they do beats a 20-minute one they skip.
    Place them in their real day: after the commute, after the late call,
    not at a default 9am.
 4. **Anchors**: when each ritual happens, attached to something they already
@@ -223,7 +223,7 @@ Only after an explicit yes. Then write:
 8. If they chose a nudge: `./life nudge on HH:MM` (add `private` if chosen),
    then `./life nudge test` so they see one now. This changes their
    computer's scheduler, so say so and get a yes first.
-9. Run `./life reviewed` so the first weekly review comes due in 7 days, at
+9. Run `./life reviewed` so the first Sunday meeting comes due in 7 days, at
    the end of the trial week (fresh setup only; skip in retune mode).
 10. Run `./life check` and fix anything it reports.
 
@@ -238,7 +238,7 @@ nudge.
 End with, in this order:
 - What now exists, in 3–4 bullets, concrete.
 - What tomorrow's session will look like, in one line.
-- A 1-week trial framing: "Try it for 7 days. At the weekly review we'll cut
+- A 1-week trial framing: "Try it for 7 days. At the Sunday meeting we'll cut
   whatever isn't earning its place."
 - ONE first action doable in under 2 minutes.
 

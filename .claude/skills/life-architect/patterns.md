@@ -11,7 +11,7 @@ honest trade-offs. None of these is required; drop whatever doesn't fit.
 | `queue.md` in this repo | People who open the agent most days | Invisible if they don't open it |
 | Pointer to a task app (Todoist, Things, TickTick, Apple Reminders) | People who live on their phone | Agent can't see it unless connected; queue.md becomes a pointer |
 | WhatsApp "message yourself" chat for capture, swept into Inbox at wrap-up | People whose eyes live in WhatsApp (most of India) | The agent can't read WhatsApp; they paste new lines in at wrap-up |
-| Paper + weekly transcription | Tactile thinkers, screen-fatigued | Needs the weekly review to sync |
+| Paper + weekly transcription | Tactile thinkers, screen-fatigued | Needs the Sunday meeting to sync |
 | Calendar-only (time-block everything) | Time-blind people who trust alerts | Brittle when a day slips |
 
 Rule of thumb: where their eyes already go wins over the "best" tool.
@@ -22,7 +22,7 @@ Rule of thumb: where their eyes already go wins over the "best" tool.
 |---|---|---|
 | Start day | "What's the one thing today?" | Pick 1–3 Now items, check calendar, check energy, first step |
 | End of day | "Where did I stop?" one line | Full wrap-up (`/life` in the evening) |
-| Weekly | Empty Inbox only | Full weekly review |
+| Weekly | Empty Inbox only | Full Sunday meeting |
 
 Start with the 2-minute version. Grow only if they ask.
 
@@ -82,7 +82,7 @@ traits. Always offer; never impose.
   "study with me" stream (huge among exam-prep students), Focusmate, or
   having the agent check in every 25 minutes during a hard task.
 - **Novelty budget**: expect systems to lose shine at 2–3 weeks. Plan a small
-  refresh at the weekly review (new ritual anchor, new area, new look) instead
+  refresh at the Sunday meeting (new ritual anchor, new area, new look) instead
   of waiting for it to die.
 - **Interest-based nervous system**: tie boring tasks to interest, urgency,
   challenge or novelty ("race the timer", "pair it with a podcast", "do it

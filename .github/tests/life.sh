@@ -14,7 +14,9 @@ fresh() { # new sandbox with the template; "setup" also applies the Kavya exampl
   T="$(mktemp -d)"
   cp -R "$REPO/life" "$REPO/AGENTS.md" "$REPO/CLAUDE.md" "$REPO/context.md" \
     "$REPO/current.md" "$REPO/queue.md" "$REPO/week.md" "$REPO/preferences.md" \
-    "$REPO/.life" "$REPO/.claude" "$REPO/areas" "$T/"
+    "$REPO/.claude" "$REPO/areas" "$T/"
+  # only the tracked setup marker: the dev clone's own local state (.life/*) never leaks into a test
+  mkdir -p "$T/.life" && cp "$REPO/.life/SETUP_NEEDED" "$T/.life/"
   if [ "${1:-}" = setup ]; then
     rm "$T/.life/SETUP_NEEDED"; cp "$REPO"/examples/kavya/*.md "$T/"
     # a set-up copy has its "About the person" section filled in
@@ -456,6 +458,11 @@ out="$(printf '{"prompt":"what is the point of anything"}' | ./life safety)"
 lacks "a crisis message never gets the setup note" "$out" "offer the quick start"
 fresh setup
 [ -z "$(printf '{"prompt":"hi"}' | ./life safety)" ] && ok || bad "no setup note once set up"
+
+# --- copies made before the rename still set up cleanly
+fresh; awk '{ sub(/to set up ALFRED/, "to set up Life OS") } 1' queue.md > q && mv q queue.md
+./life setup --name K --thing x --adhd no >/dev/null
+lacks "setup drops an old-name setup item" "$(cat queue.md)" "to set up Life OS"
 
 # --- the public template: dev mode, no setup, no rituals
 gitinit() { git init -q . && git config user.email t@example.com && git config user.name t; }
