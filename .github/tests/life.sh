@@ -456,6 +456,81 @@ lacks "a crisis message never gets the setup note" "$out" "offer the quick start
 fresh setup
 [ -z "$(printf '{"prompt":"hi"}' | ./life safety)" ] && ok || bad "no setup note once set up"
 
+# --- the public template: dev mode, no setup, no rituals
+gitinit() { git init -q . && git config user.email t@example.com && git config user.name t; }
+fresh; gitinit; git remote add origin git@github.com:hafeezhmha/life-os.git
+out="$(./life start 2>&1)"
+has "template start says dev" "$out" "dev: this is the public Life OS template"
+lacks "template start has no setup offer" "$out" "Not set up yet"
+out="$(./life setup --name X --thing y --adhd no 2>&1)"; rc=$?
+[ $rc = 2 ] && ok || bad "setup refused in the template" "$out"
+has "setup refusal says why" "$out" "public repo"
+[ -f .life/SETUP_NEEDED ] && ok || bad "refused setup changes nothing"
+[ -z "$(printf '{"prompt":"hi"}' | ./life safety)" ] && ok || bad "no setup note in the template"
+has "crisis net stays on in the template" "$(printf '{"prompt":"what is the point"}' | ./life safety)" "SAFETY CHECK"
+out="$(./life ritual 2>&1)"; rc=$?; [ $rc = 2 ] && ok || bad "rituals refused in the template" "$out"
+git config life.personal "$HOME/life"
+has "dev note points to the personal copy" "$(./life status)" "personal Life OS: $HOME/life"
+git remote set-url origin https://github.com/hafeezhmha/life-os
+has "https origin is the template too" "$(./life status)" "dev:"
+git remote set-url origin git@github.com:kavya/life-os.git
+lacks "a copy made from the template is not" "$(./life status)" "dev:"
+
+# --- guard: the pre-commit hook in the template's development clone
+fresh; cp "$REPO/.gitignore" .; gitinit; git remote add origin git@github.com:hafeezhmha/life-os.git
+mkdir -p .github/hooks && cp "$REPO/.github/hooks/pre-commit" .github/hooks/ && git config core.hooksPath .github/hooks
+git add -A && git commit -qm init
+printf '\nA template edit.\n' >> context.md; git add context.md
+out="$(git commit -qm edit 2>&1)" && ok || bad "guard passes a template edit" "$out"
+cp "$REPO/examples/kavya/context.md" context.md; git add context.md
+out="$(git commit -qm personal 2>&1)" && bad "guard blocks a filled-in life map" "$out" || has "guard names the life map" "$out" "context.md has no placeholders"
+git restore --staged context.md && git restore context.md
+git rm -q .life/SETUP_NEEDED
+P="- **Name:** Kavya" awk '/personal:start/ { print; print ENVIRON["P"]; skip = 1; next } /personal:end/ { skip = 0 } !skip' AGENTS.md > A.tmp && mv A.tmp AGENTS.md
+git add AGENTS.md
+out="$(./life guard 2>&1)"; rc=$?
+[ $rc = 1 ] && ok || bad "guard exits 1" "$out"
+has "guard names the setup marker" "$out" "SETUP_NEEDED is deleted"
+has "guard names AGENTS.md" "$out" 'AGENTS.md has a filled-in "About the person"'
+has "guard says the fix" "$out" "git restore --staged"
+git remote set-url origin git@github.com:kavya/life-os.git
+out="$(./life guard 2>&1)" && ok || bad "guard is silent in a personal copy" "$out"
+
+# --- autosave: a personal copy commits its data files locally
+fresh setup; cp "$REPO/.gitignore" .; gitinit; git add -A && git commit -qm init
+commits() { git rev-list --count HEAD; }
+./life add "buy milk" >/dev/null; ./life gate </dev/null >/dev/null
+has "autosave commits the day" "$(git log -1 --format=%s)" "life: $TODAY"
+has "autosave saved the change" "$(git show HEAD:queue.md)" "buy milk"
+n="$(commits)"
+./life add "call Amma" >/dev/null; mkdir -p areas/health && echo "# Health" > areas/health/README.md
+./life gate </dev/null >/dev/null
+[ "$(commits)" = "$n" ] && ok || bad "one autosave commit a day"
+has "the day's commit has every change" "$(git show HEAD:queue.md)" "call Amma"
+has "a new area is saved" "$(git ls-files areas)" "areas/health/README.md"
+mkdir -p private && echo "x" > private/x.md && echo "x" > notes.txt; ./life add "third" >/dev/null
+./life gate </dev/null >/dev/null
+lacks "autosave never commits private/" "$(git ls-files)" "private/"
+lacks "autosave commits only data files" "$(git ls-files)" "notes.txt"
+lacks "autosave commits no launcher state" "$(git ls-files .life)" "last-message"
+./life gate </dev/null >/dev/null; [ "$(commits)" = "$n" ] && ok || bad "no change, no commit"
+./life add "api_key = abcdef123456" >/dev/null; ./life gate </dev/null >/dev/null
+has "a secret pauses autosave" "$(./life status)" "autosave: paused, queue.md has a line that looks like a password"
+lacks "the secret is not committed" "$(git show HEAD:queue.md)" "abcdef123456"
+[ -z "$(git diff --cached --name-only)" ] && ok || bad "the secret is left unstaged"
+git checkout -q -- queue.md; ./life gate </dev/null >/dev/null
+lacks "autosave resumes once it is gone" "$(./life status)" "autosave: paused"
+./life add "during a merge" >/dev/null; echo x > .git/MERGE_HEAD; ./life gate </dev/null >/dev/null
+has "a merge pauses autosave" "$(./life status)" "a merge or rebase is in progress"
+rm .git/MERGE_HEAD; ./life gate </dev/null >/dev/null
+git update-ref refs/remotes/origin/main HEAD; ./life add "after a push" >/dev/null; ./life gate </dev/null >/dev/null
+[ "$(commits)" = $((n + 1)) ] && ok || bad "a pushed commit is never amended"
+./life ritual wrap-up >/dev/null; ./life add "mid-ritual" >/dev/null; ./life gate </dev/null >/dev/null 2>&1
+[ "$(commits)" = $((n + 1)) ] && ok || bad "no autosave while a write is owed"
+./life pending clear >/dev/null; touch .life/autosave-off; ./life gate </dev/null >/dev/null
+[ "$(commits)" = $((n + 1)) ] && ok || bad "autosave-off stops it"
+[ -x "$REPO/.github/hooks/pre-commit" ] && ok || bad "pre-commit hook is executable"
+
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"
 out="$(./life frob 2>&1)"; rc=$?

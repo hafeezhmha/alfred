@@ -1,0 +1,5 @@
+#!/bin/sh
+# Life OS template, development clone only: refuse commits that carry a
+# personal Life OS (a filled-in AGENTS.md, life map, log or queue).
+# Turn it on once in that clone: git config core.hooksPath .github/hooks
+exec bash "$(git rev-parse --show-toplevel)/life" guard

@@ -152,8 +152,10 @@ shrink, move or drop it.
 
 ## Git
 
-Personal data: the repo should be private. Commit with their identity, never
-push unless asked, and confirm the remote is private before any push.
+Personal data: the repo should be private. `./life gate` commits the data
+files locally (one commit a day, never `private/`); don't commit them by hand.
+Never push unless asked, and confirm the remote is private before any push.
+The public template itself prints `dev:` at start: a code project, no setup.
 
 <!-- life-architect:personal:start -->
 ## About the person
