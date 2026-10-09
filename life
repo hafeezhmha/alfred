@@ -21,6 +21,18 @@ TODAY="$(date +%Y-%m-%d)"
 
 die() { echo "error: $*" >&2; exit 2; }
 
+# ---------- the public template vs a personal copy ----------
+# The template's own repo is for developing Life OS. Personal data never goes
+# there: setup refuses, start says "dev:", and `./life guard` (pre-commit hook)
+# blocks commits that carry a personal Life OS.
+TEMPLATE_RE='github\.com[:/]hafeezhmha/life-os(\.git)?/?$'
+is_template() { u="$(git remote get-url origin 2>/dev/null)" || return 1; printf '%s' "$u" | grep -Eq "$TEMPLATE_RE"; }
+template_note() {
+  echo "dev: this is the public Life OS template ($(git remote get-url origin)), not a personal Life OS. Work on it as a code project (CONTRIBUTING.md): no setup, rituals or persona here."
+  p="$(git config --get life.personal 2>/dev/null || true)"
+  if [ -n "$p" ]; then echo "  personal Life OS: $p"; else echo "  a personal copy is a private clone elsewhere (README, \"Start here\")"; fi
+}
+
 # ---------- queue model ----------
 # Items are "- " lines under the known "## " sections of queue.md. Ids are the
 # section letter plus position (n1 = first Now item), recomputed on every call
@@ -397,15 +409,85 @@ cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by
     echo "Life OS: end with one concrete next step, not \"anything else?\". Rewrite your last line." >&2
     exit 2
   fi
-  case "$last" in *\?) return 0 ;; esac   # a question: waiting on the person, nothing is late yet
+  case "$last" in *\?) autosave; return 0 ;; esac   # a question: waiting on the person, nothing is late yet
   p="$(pending_list | tr '\n' ' ' | sed 's/ $//')"
   if [ -n "$p" ]; then
     extra=""; case " $p " in *" log "*) extra=" For log: today's entry needs their exact words, ./life log --said \"<their words>\"." ;; esac
     echo "Life OS: this ritual still owes a write ($p).$extra If the person said yes, do it now with ./life (see ./life help). If they chose not to or want to stop, run: ./life pending clear $p. Then finish your reply." >&2
     exit 2
   fi
+  autosave
   [ -t 1 ] && echo "gate: clear"
   return 0
+}
+
+# ---------- autosave: personal copies commit their data locally ----------
+# Runs from the gate, so after replies in Claude Code and Codex (OpenCode runs
+# the gate by hand). Only these paths, never private/, one commit a day
+# (amended until it reaches a remote; earlier states stay in `git reflog`),
+# never pushes. A change that looks like a secret stops it until moved.
+AUTOSAVE_PATHS="AGENTS.md context.md current.md queue.md week.md preferences.md areas archive"
+AUTOSAVE_BLOCKED=".life/autosave-blocked"
+SECRET_RE="sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_|xox[abprs]-|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|/calendar/ical/[^ ]*/private-|(password|passwd|api[_-]?key|secret|token)[\"']? *[:=] *[^ ]{6,}"
+
+autosave_block() { mkdir -p .life; echo "$1" > "$AUTOSAVE_BLOCKED"; }
+
+autosave() {
+  [ -f .life/SETUP_NEEDED ] || [ -f .life/autosave-off ] && return 0
+  git rev-parse --git-dir >/dev/null 2>&1 || return 0
+  is_template && return 0
+  gd="$(git rev-parse --git-dir)"
+  if [ -f "$gd/MERGE_HEAD" ] || [ -d "$gd/rebase-merge" ] || [ -d "$gd/rebase-apply" ] || [ -f "$gd/CHERRY_PICK_HEAD" ] || [ -n "$(git ls-files -u)" ]; then
+    autosave_block "a merge or rebase is in progress; nothing saved until it is finished (git status shows it)"; return 0
+  fi
+  paths=""; for p in $AUTOSAVE_PATHS; do [ -e "$p" ] && paths="$paths $p"; done
+  [ -n "$paths" ] || return 0
+  # shellcheck disable=SC2086  # $paths is a fixed list of plain names
+  if [ -z "$(git status --porcelain -- $paths)" ]; then rm -f "$AUTOSAVE_BLOCKED"; return 0; fi
+  # shellcheck disable=SC2086
+  git add -A -- $paths
+  # shellcheck disable=SC2086
+  for f in $(git diff --cached --name-only -- $paths); do
+    if git diff --cached -- "$f" | grep '^+' | grep -Eiq "$SECRET_RE"; then
+      # shellcheck disable=SC2086
+      git reset -q -- $paths
+      autosave_block "$f has a line that looks like a password, key or token. move it to private/ and autosave resumes"; return 0
+    fi
+  done
+  msg="life: $TODAY"
+  if [ "$(git log -1 --format=%s 2>/dev/null)" = "$msg" ] && [ -z "$(git branch -r --contains HEAD 2>/dev/null)" ]; then
+    # shellcheck disable=SC2086
+    err="$(git commit -q --amend --no-edit -- $paths 2>&1)" || { autosave_block "git commit failed: $(printf '%s' "$err" | head -1)"; return 0; }
+  else
+    # shellcheck disable=SC2086
+    err="$(git commit -q -m "$msg" -- $paths 2>&1)" || { autosave_block "git commit failed: $(printf '%s' "$err" | head -1)"; return 0; }
+  fi
+  rm -f "$AUTOSAVE_BLOCKED"
+}
+
+cmd_guard() { # pre-commit hook in the template's development clone: git config core.hooksPath .github/hooks
+  is_template || return 0
+  why=""
+  git diff --cached --name-status | grep -Eq '^D[[:space:]]+\.life/SETUP_NEEDED$' && why="$why
+  .life/SETUP_NEEDED is deleted, so setup ran here"
+  extra="$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(private/|\.life/|\.claude/\.adhd-always$)' | grep -vx '\.life/SETUP_NEEDED' || true)"
+  [ -z "$extra" ] || why="$why
+  personal state files: $(echo $extra)"
+  staged="$(git diff --cached --name-only)"
+  has_staged() { printf '%s\n' "$staged" | grep -qx "$1"; }
+  if has_staged AGENTS.md && ! git show :AGENTS.md | awk '/personal:start/{f=1} /personal:end/{f=0} f' | grep -q 'Not set up yet'; then
+    why="$why
+  AGENTS.md has a filled-in \"About the person\""; fi
+  if has_staged context.md && ! git show :context.md | grep -qF '{{'; then why="$why
+  context.md has no placeholders left (a filled-in life map)"; fi
+  if has_staged current.md && ! git show :current.md | grep -qF '{{DATE}}'; then why="$why
+  current.md has lost its template entry (a real log)"; fi
+  if has_staged queue.md && ! git show :queue.md | grep -q 'to set up Life OS'; then why="$why
+  queue.md has lost its setup item (a real queue)"; fi
+  [ -n "$why" ] || return 0
+  echo "guard: this is the public Life OS template, and this commit carries a personal Life OS:$why" >&2
+  echo "fix: git restore --staged <file> (and git restore <file> to undo it). Personal data belongs in a private copy." >&2
+  exit 1
 }
 
 # ---------- safety net: crisis language in what the person just sent ----------
@@ -439,7 +521,7 @@ cmd_safety() {
   # shellcheck disable=SC1112  # the curly apostrophe is deliberate: "what’s the point" must match too
   text="$(printf '%s' "$input" | sed 's/\\u2019/'"'"'/g; s/’/'"'"'/g' | tr 'A-Z' 'a-z')"
   hit="$(printf '%s' "$text" | grep -Eo "$CRISIS_RE" | head -1 || true)"
-  if [ -z "$hit" ] && [ -f .life/SETUP_NEEDED ] && [ ! -f .life/setup-progress.md ]; then
+  if [ -z "$hit" ] && [ -f .life/SETUP_NEEDED ] && [ ! -f .life/setup-progress.md ] && ! is_template; then
     echo "LIFE OS: not set up yet. Unless they asked for something else, reply like this: greet them, say in two lines what Life OS does (you stop being the memory; every session starts with one small step), and offer the quick start: three questions, about three minutes. On a yes, follow the life-architect skill."
   fi
   [ -n "$hit" ] || return 0
@@ -467,6 +549,7 @@ ritual_pick() { # prints "name<TAB>reason"
 }
 
 cmd_ritual() {
+  is_template && die "this is the public Life OS template (dev mode); rituals run in a personal copy"
   if [ -n "${1:-}" ]; then name="$1"; reason="asked for"; ritual_file "$name" >/dev/null || die "unknown ritual '$1' (plan-day, wrap-up, review, unstuck, steady)"
   else r="$(ritual_pick)"; name="$(printf '%s' "$r" | cut -f1)"; reason="$(printf '%s' "$r" | cut -f2)"; fi
   if [ "$name" = setup ]; then
@@ -490,6 +573,7 @@ cmd_ritual() {
 cmd_status() {
   adhd=off; [ -f .claude/.adhd-always ] && adhd=on
   echo "life: $(date '+%a %Y-%m-%d %H:%M') · adhd $adhd"
+  if is_template; then template_note; return 0; fi
   if [ -f .life/SETUP_NEEDED ]; then
     echo "Not set up yet. Type /life (Claude Code, OpenCode) or say \"set up my life os\" (Codex). About 3 minutes."
     [ -f .life/setup-progress.md ] && echo "setup: paused; progress saved in .life/setup-progress.md (offer to resume)"
@@ -529,6 +613,7 @@ cmd_status() {
   elif [ "$rd" -ge 7 ]; then echo "review: due (last $rd days ago)"
   else echo "review: not due (last $rd days ago)"; fi
   pending_hint
+  [ -f "$AUTOSAVE_BLOCKED" ] && echo "autosave: paused, $(cat "$AUTOSAVE_BLOCKED")"
   lr="$(learn_due)"; [ -z "$lr" ] || echo "learn: $(printf '%s' "$lr" | cut -f1) \"$(printf '%s' "$lr" | cut -f2)\" (end of session only: ./life learn)"
   rp="$(ritual_pick)"; echo "ritual: $(printf '%s' "$rp" | cut -f1) ($(printf '%s' "$rp" | cut -f2))"
   echo "next:"
@@ -544,6 +629,7 @@ cmd_start() { # the whole session-start read, in one call, for every agent
   fi
   cmd_status
   [ -f .life/SETUP_NEEDED ] && return 0
+  is_template && return 0
   date +%Y-%m-%d > .life/last-start # a session happened today, so no nudge
   echo "context:"
   awk '{sub(/\r$/, "")} /^## /{f=1} f' context.md | sed '/^$/d; s/^/  /'
@@ -703,6 +789,7 @@ cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first 
       *) die "unknown flag '$1'. usage: ./life setup --name \"..\" --thing \"..\" --adhd yes|no|trial [--step \"..\"]" ;;
     esac
   done
+  is_template && die "this is the public Life OS template, so their details would land in a public repo. set up in a private copy instead (README, \"Start here\")"
   [ -f .life/SETUP_NEEDED ] || die "already set up. to change things: say \"re-tune\" (life-architect skill, retune mode)"
   [ -n "$name" ] && [ -n "$thing" ] || die 'usage: ./life setup --name "Kavya" --thing "book the passport slot" --adhd yes|no|trial [--step "open the site"]'
   case "$adhd" in yes|no|trial) ;; *) die "--adhd must be yes, no or trial";; esac
@@ -853,6 +940,7 @@ case "$CMD" in
   setup) shift; cmd_setup "$@" ;;
   archive) cmd_archive ;;
   check) cmd_check ;;
+  guard) cmd_guard ;;
   nudge) shift; cmd_nudge "$@" ;;
   help|-h|--help)
     cat <<'HELP'
@@ -888,11 +976,13 @@ setup and review
 rituals and the stop gate
   ./life pending [clear [item|all]]   the write a started ritual still owes (plan, log, reviewed)
   ./life gate                     exit 2 while a write is owed; the Stop hook in Claude Code and Codex. OpenCode: run it before finishing
+                                  when clear, it also commits the data files locally (one commit a day, never private/, never pushed; touch .life/autosave-off to stop)
   ./life safety                   crisis-language net on the person's message; the UserPromptSubmit hook in Claude Code and Codex
 upkeep
   ./life reviewed                 (no flags) just stamp the review done
   ./life archive                  move current.md entries older than 4 weeks to archive/
   ./life check                    structure problems, each with its fix
+  ./life guard                    template repo only: refuse a commit carrying personal data (pre-commit hook: git config core.hooksPath .github/hooks)
   ./life nudge on HH:MM [private] | off | test    daily desktop nudge, only on days Life OS wasn't opened
 HELP
     ;;

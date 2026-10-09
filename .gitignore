@@ -1,11 +1,8 @@
 # Never committed: things you want local only
 private/
 .lavish/
-.life/setup-progress.md
-.life/last-start
-.life/nudge
-.life/to-learn.md
 .DS_Store
-.life/last-plan
-.life/pending
-.life/last-message
+# Launcher state: local to this machine. Only the template's setup marker is tracked.
+.life/*
+!.life/SETUP_NEEDED
+.claude/.adhd-always

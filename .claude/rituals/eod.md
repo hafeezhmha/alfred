@@ -33,7 +33,5 @@ planned.
    win in plain words, then the first step for tomorrow. Nothing happened
    today? Say so without judgment. Don't end with "anything else?".
 7. **Before your last reply:** `./life gate` prints nothing when all writes
-   are done (Claude Code and Codex run it for you).
-8. **Optional commit,** only on a yes:
-   `git add current.md queue.md areas/ && git commit -m "wrap-up <date>"`.
-   Never `git add -A`, never `private/`.
+   are done (Claude Code and Codex run it for you). It also commits the day
+   locally, so no git step here.
