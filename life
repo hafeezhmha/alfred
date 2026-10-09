@@ -25,7 +25,7 @@ die() { echo "error: $*" >&2; exit 2; }
 # The template's own repo is for developing Life OS. Personal data never goes
 # there: setup refuses, start says "dev:", and `./life guard` (pre-commit hook)
 # blocks commits that carry a personal Life OS.
-TEMPLATE_RE='github\.com[:/]hafeezhmha/life-os(\.git)?/?$'
+TEMPLATE_RE='github\.com[:/]hafeezhmha/(alfred|life-os)(\.git)?/?$'   # life-os: the name before the rename
 is_template() { u="$(git remote get-url origin 2>/dev/null)" || return 1; printf '%s' "$u" | grep -Eq "$TEMPLATE_RE"; }
 template_note() {
   echo "dev: this is the public ALFRED template ($(git remote get-url origin)), not a personal ALFRED. Work on it as a code project (CONTRIBUTING.md): no setup, rituals or persona here."

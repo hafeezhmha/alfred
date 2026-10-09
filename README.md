@@ -10,7 +10,7 @@ forget, and start again.**
 
 He keeps the commitments, the context and the plan. You do the living.
 
-[![tests](https://github.com/hafeezhmha/life-os/actions/workflows/test.yml/badge.svg)](https://github.com/hafeezhmha/life-os/actions/workflows/test.yml)
+[![tests](https://github.com/hafeezhmha/alfred/actions/workflows/test.yml/badge.svg)](https://github.com/hafeezhmha/alfred/actions/workflows/test.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 [![works with Claude Code, OpenCode, Codex](https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20OpenCode%20%C2%B7%20Codex-5a67d8)](#start-here-about-3-minutes)
 
@@ -50,7 +50,7 @@ of the jokes.
 
 ## Start here (about 3 minutes)
 
-1. **Make your own copy.** [Use this template](https://github.com/hafeezhmha/life-os/generate),
+1. **Make your own copy.** [Use this template](https://github.com/hafeezhmha/alfred/generate),
    set it to **private** (it will hold your life), then clone it to `~/alfred`.
 2. **Add the front door,** once, so `alfred` opens him from any terminal:
 
