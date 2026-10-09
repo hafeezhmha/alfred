@@ -547,7 +547,13 @@ git update-ref refs/remotes/origin/main HEAD; ./life add "after a push" >/dev/nu
 [ "$(commits)" = $((n + 1)) ] && ok || bad "a pushed commit is never amended"
 ./life ritual wrap-up >/dev/null; ./life add "mid-ritual" >/dev/null; ./life gate </dev/null >/dev/null 2>&1
 [ "$(commits)" = $((n + 1)) ] && ok || bad "no autosave while a write is owed"
-./life pending clear >/dev/null; touch .life/autosave-off; ./life gate </dev/null >/dev/null
+./life pending clear >/dev/null
+if [ "$(id -u)" != 0 ]; then # root ignores permissions, so this check can't fail for it
+  chmod a-w .git; ./life add "read-only git" >/dev/null; ./life gate </dev/null >/dev/null; chmod u+w .git
+  lacks "a read-only .git (agent sandbox) is skipped, not reported as a failure" "$(./life status)" "autosave: paused"
+  ./life gate </dev/null >/dev/null; has "the next save outside the sandbox commits it" "$(git show HEAD:queue.md)" "read-only git"
+fi
+touch .life/autosave-off; ./life gate </dev/null >/dev/null
 [ "$(commits)" = $((n + 1)) ] && ok || bad "autosave-off stops it"
 [ -x "$REPO/.github/hooks/pre-commit" ] && ok || bad "pre-commit hook is executable"
 
