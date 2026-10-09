@@ -410,7 +410,8 @@ cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by
     exit 2
   fi
   case "$last" in *\?) autosave; return 0 ;; esac   # a question: waiting on the person, nothing is late yet
-  p="$(pending_list | tr '\n' ' ' | sed 's/ $//')"
+  # the Sunday meeting runs over many replies and ends with ./life week set; status keeps showing it as owed
+  p="$(pending_list | grep -vx reviewed | tr '\n' ' ' | sed 's/ $//')"
   if [ -n "$p" ]; then
     extra=""; case " $p " in *" log "*) extra=" For log: today's entry needs their exact words, ./life log --said \"<their words>\"." ;; esac
     echo "ALFRED: this ritual still owes a write ($p).$extra If the person said yes, do it now with ./life (see ./life help). If they chose not to or want to stop, run: ./life pending clear $p. Then finish your reply." >&2
@@ -634,11 +635,11 @@ cmd_week() {
 
 week_set() { # the Sunday meeting's one write: new week.md, last week archived, review logged
   personal_only
-  outs=""; days=""; obs=""; fol=""; no=0
+  outs=""; days=""; obs=""; fol=""; agd=""; no=0
   set_args=""
   while [ $# -gt 0 ]; do
     case "$1" in
-      --outcome|--day|--obstacle|--follow|--win) [ $# -ge 2 ] || die "$1 needs a value"
+      --outcome|--day|--obstacle|--follow|--agenda|--win) [ $# -ge 2 ] || die "$1 needs a value"
         v="$(printf '%s' "$2" | tr '\r\n\t' '   ')"
         case "$1" in
           --outcome) outs="$outs- $v"$'\n'; no=$((no + 1)); set_args="$set_args--focus"$'\036'"$v"$'\036' ;;
@@ -646,9 +647,10 @@ week_set() { # the Sunday meeting's one write: new week.md, last week archived, 
                  days="$days- $v"$'\n' ;;
           --obstacle) obs="$obs- $v"$'\n' ;;
           --follow) fol="$fol- $v"$'\n' ;;
+          --agenda) agd="$agd- $v"$'\n' ;;
           --win) set_args="$set_args--win"$'\036'"$v"$'\036' ;;
         esac; shift 2 ;;
-      *) die "unknown flag '$1'. flags: --outcome (1 to 3) --day --obstacle --follow --win, each repeatable" ;;
+      *) die "unknown flag '$1'. flags: --outcome (1 to 3) --day --obstacle --follow --agenda --win, each repeatable" ;;
     esac
   done
   [ "$no" -ge 1 ] || die 'at least one --outcome, e.g. ./life week set --outcome "send the proposal" --day "Mon: cafe, proposal first"'
@@ -663,9 +665,10 @@ week_set() { # the Sunday meeting's one write: new week.md, last week archived, 
     { echo; echo "## Week agreed $a"; echo; awk '{sub(/\r$/, "")} /^## /{f=1} f && (/^## / || /^- /)' week.md; } >> "$f"
   fi
   tmp="$(mktemp)"
-  O="$outs" D="$days" B="$obs" F="$fol" A="Agreed: $TODAY at the Sunday meeting. In force until the next one." awk '
+  O="$outs" D="$days" B="$obs" F="$fol" G="$agd" A="Agreed: $TODAY at the Sunday meeting. In force until the next one." awk '
     function flush(   v) { if (sec == "Outcomes") v = ENVIRON["O"]; else if (sec == "Days") v = ENVIRON["D"]
       else if (sec == "Obstacles") v = ENVIRON["B"]; else if (sec == "Follow up") v = ENVIRON["F"]
+      else if (sec == "For Sunday") v = ENVIRON["G"]
       if (v != "") printf "\n%s", v }
     { sub(/\r$/, "") }
     /^# / && !sec { print; print ""; next }
@@ -1186,7 +1189,7 @@ log and notes
 the week and how they work
   ./life resume                   back after a gap or drift: today's agreement, Now, where they stopped
   ./life week                     this week's agreement (outcomes, days, obstacles, follow-ups, for Sunday)
-  ./life week set --outcome ".." [--day "Mon: .."]... [--obstacle ".."]... [--follow ".."]... [--win ".."]...
+  ./life week set --outcome ".." [--day "Mon: .."]... [--obstacle ".."]... [--follow ".."]... [--agenda ".."]... [--win ".."]...
                                   the Sunday meeting's write: new week.md, last week archived, review logged
   ./life agenda "text" [--follow-up]   onto week.md for the next Sunday meeting
   ./life pref [said|seen|guess "text"]   preferences.md by evidence; no args lists it
