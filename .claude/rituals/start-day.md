@@ -3,7 +3,12 @@
 Get them moving in under three minutes. One question at a time.
 
 1. **Gather, don't ask.** `./life start` output is already here (Now, where
-   they stopped, waiting days, context). Run `./life queue next` for Next.
+   they stopped, waiting days, context). If `week:` has a line for today,
+   Sunday already decided: this is a confirm, not a plan. "As agreed:
+   <today's line>. First: <n1>. Still right, and energy ok?" On yes,
+   `./life plan <the Now ids>`, then step 5. A change is fine: adjust once,
+   and `./life agenda` the reason if it matters for Sunday. Otherwise run
+   `./life queue next` for Next and go on.
 2. **Ask energy:** "Energy today: low, ok, high, or can't today?" (skip if
    they said). If it sounds like more than tired, the crisis rule in
    `AGENTS.md` comes first. "Can't today": `./life move <each Now id> next`,
