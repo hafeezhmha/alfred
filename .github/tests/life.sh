@@ -307,7 +307,7 @@ out="$(./life learned t99 2>&1)"; has "unknown topic" "$out" "no topic t99"
 fresh
 out="$(./life setup --name Kavya --thing "book the passport slot" --adhd trial --step "open the Passport Seva site")"
 has "setup ok" "$out" "ok: set up for Kavya"
-has "setup passes check" "$out" "Life OS check: all good."
+has "setup passes check" "$out" "check: all good."
 [ ! -f .life/SETUP_NEEDED ] && ok || bad "setup removes SETUP_NEEDED"
 [ -f .life/to-learn.md ] && ok || bad "setup copies to-learn"
 [ -f .claude/.adhd-always ] && ok || bad "setup trial turns adhd on"
@@ -316,8 +316,8 @@ has "setup names them" "$(cat context.md)" "Kavya. The rest is learned"
 has "setup marks unknowns" "$(awk '/^## People/,/^## Fixed/' context.md)" "Not known yet."
 has "setup keeps the repo row" "$(cat context.md)" "| This repo |"
 has "setup puts the thing in Now" "$(./life queue now)" "n1 book the passport slot"
-lacks "setup drops the setup item" "$(cat queue.md)" "to set up Life OS"
-has "setup logs day one" "$(./life status)" 'stopped: '"$TODAY"' "Life OS started"'
+lacks "setup drops the setup item" "$(cat queue.md)" "to set up ALFRED"
+has "setup logs day one" "$(./life status)" 'stopped: '"$TODAY"' "ALFRED started"'
 has "setup first step" "$(./life status)" "at: open the Passport Seva site"
 p_sec="$(awk '/personal:start/,/personal:end/' AGENTS.md)"
 has "setup writes about the person" "$p_sec" "**Name:** Kavya"
@@ -461,7 +461,7 @@ fresh setup
 gitinit() { git init -q . && git config user.email t@example.com && git config user.name t; }
 fresh; gitinit; git remote add origin git@github.com:hafeezhmha/life-os.git
 out="$(./life start 2>&1)"
-has "template start says dev" "$out" "dev: this is the public Life OS template"
+has "template start says dev" "$out" "dev: this is the public ALFRED template"
 lacks "template start has no setup offer" "$out" "Not set up yet"
 out="$(./life setup --name X --thing y --adhd no 2>&1)"; rc=$?
 [ $rc = 2 ] && ok || bad "setup refused in the template" "$out"
@@ -471,7 +471,7 @@ has "setup refusal says why" "$out" "public repo"
 has "crisis net stays on in the template" "$(printf '{"prompt":"what is the point"}' | ./life safety)" "SAFETY CHECK"
 out="$(./life ritual 2>&1)"; rc=$?; [ $rc = 2 ] && ok || bad "rituals refused in the template" "$out"
 git config life.personal "$HOME/life"
-has "dev note points to the personal copy" "$(./life status)" "personal Life OS: $HOME/life"
+has "dev note points to the personal copy" "$(./life status)" "personal ALFRED: $HOME/life"
 git remote set-url origin https://github.com/hafeezhmha/life-os
 has "https origin is the template too" "$(./life status)" "dev:"
 git remote set-url origin git@github.com:kavya/life-os.git

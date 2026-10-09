@@ -28,7 +28,7 @@ Finding _facts_ is your job, never the user's. When a frontier question needs a 
 
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
 
-## Life OS notes (added by this template, not upstream)
+## ALFRED notes (added by this template, not upstream)
 
 - **Cap each round at 3 questions** when `.claude/.adhd-always` exists or the
   person's notes in `AGENTS.md` say rounds should be short. Hold the rest of

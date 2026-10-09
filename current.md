@@ -18,13 +18,13 @@ Next: see queue.md.
 
 ---
 
-## {{DATE}} — Life OS installed
+## {{DATE}} — ALFRED installed
 
-Working on: setting up Life OS.
+Working on: setting up ALFRED.
 
 Done:
 - Cloned the template.
 
-Stopped at: type `/life` (or say "set up my life os") to set it up.
+Stopped at: say hello to ALFRED (or type `/life`) to set him up.
 
 Next: see queue.md.

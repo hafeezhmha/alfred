@@ -1,6 +1,6 @@
 # Example: Kavya
 
-A made-up person, to show what Life OS looks like after a few weeks of use.
+A made-up person, to show what ALFRED's notes look like after a few weeks of use.
 Kavya is 27, a backend developer in Bangalore, lives with her parents, and
 thinks she has ADHD but hasn't been assessed. Her sister gets married in
 December.

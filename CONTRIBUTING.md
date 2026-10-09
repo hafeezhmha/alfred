@@ -1,6 +1,6 @@
 # Changing the template
 
-Life OS is for neurodivergent brains first. Every change, however small, gets
+ALFRED is for neurodivergent brains first. Every change, however small, gets
 checked against this list. If a change fails one, it needs a very good reason.
 
 ## The brain checklist

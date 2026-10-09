@@ -28,9 +28,9 @@ die() { echo "error: $*" >&2; exit 2; }
 TEMPLATE_RE='github\.com[:/]hafeezhmha/life-os(\.git)?/?$'
 is_template() { u="$(git remote get-url origin 2>/dev/null)" || return 1; printf '%s' "$u" | grep -Eq "$TEMPLATE_RE"; }
 template_note() {
-  echo "dev: this is the public Life OS template ($(git remote get-url origin)), not a personal Life OS. Work on it as a code project (CONTRIBUTING.md): no setup, rituals or persona here."
+  echo "dev: this is the public ALFRED template ($(git remote get-url origin)), not a personal ALFRED. Work on it as a code project (CONTRIBUTING.md): no setup, rituals or persona here."
   p="$(git config --get life.personal 2>/dev/null || true)"
-  if [ -n "$p" ]; then echo "  personal Life OS: $p"; else echo "  a personal copy is a private clone elsewhere (README, \"Start here\")"; fi
+  if [ -n "$p" ]; then echo "  personal ALFRED: $p"; else echo "  a personal copy is a private clone elsewhere (README, \"Start here\")"; fi
 }
 
 # ---------- queue model ----------
@@ -406,14 +406,14 @@ cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by
   # the agent's last message (both agents send it); trailing markdown and spaces trimmed
   last="$(printf '%s' "$input" | sed -nE 's/.*"last_assistant_message" *: *"(([^"\\]|\\.)*)".*/\1/p' | sed -E 's/(\\n|[[:space:]*_)"`])+$//')"
   if printf '%s' "$last" | grep -Eqi 'anything else\?*$'; then
-    echo "Life OS: end with one concrete next step, not \"anything else?\". Rewrite your last line." >&2
+    echo "ALFRED: end with one concrete next step, not \"anything else?\". Rewrite your last line." >&2
     exit 2
   fi
   case "$last" in *\?) autosave; return 0 ;; esac   # a question: waiting on the person, nothing is late yet
   p="$(pending_list | tr '\n' ' ' | sed 's/ $//')"
   if [ -n "$p" ]; then
     extra=""; case " $p " in *" log "*) extra=" For log: today's entry needs their exact words, ./life log --said \"<their words>\"." ;; esac
-    echo "Life OS: this ritual still owes a write ($p).$extra If the person said yes, do it now with ./life (see ./life help). If they chose not to or want to stop, run: ./life pending clear $p. Then finish your reply." >&2
+    echo "ALFRED: this ritual still owes a write ($p).$extra If the person said yes, do it now with ./life (see ./life help). If they chose not to or want to stop, run: ./life pending clear $p. Then finish your reply." >&2
     exit 2
   fi
   autosave
@@ -484,14 +484,14 @@ cmd_guard() { # pre-commit hook in the template's development clone: git config 
   context.md has no placeholders left (a filled-in life map)"; fi
   if has_staged current.md && ! git show :current.md | grep -qF '{{DATE}}'; then why="$why
   current.md has lost its template entry (a real log)"; fi
-  if has_staged queue.md && ! git show :queue.md | grep -q 'to set up Life OS'; then why="$why
+  if has_staged queue.md && ! git show :queue.md | grep -qE 'to set up (Life OS|ALFRED)'; then why="$why
   queue.md has lost its setup item (a real queue)"; fi
   if has_staged week.md && { ! git show :week.md | grep -q '^Agreed: not yet' || git show :week.md | grep -q '^- '; }; then why="$why
   week.md holds a real week"; fi
   if has_staged preferences.md && git show :preferences.md | grep -q '^- '; then why="$why
   preferences.md holds real preferences"; fi
   [ -n "$why" ] || return 0
-  echo "guard: this is the public Life OS template, and this commit carries a personal Life OS:$why" >&2
+  echo "guard: this is the public ALFRED template, and this commit carries a personal ALFRED:$why" >&2
   echo "fix: git restore --staged <file> (and git restore <file> to undo it). Personal data belongs in a private copy." >&2
   exit 1
 }
@@ -528,7 +528,7 @@ cmd_safety() {
   text="$(printf '%s' "$input" | sed 's/\\u2019/'"'"'/g; s/’/'"'"'/g' | tr 'A-Z' 'a-z')"
   hit="$(printf '%s' "$text" | grep -Eo "$CRISIS_RE" | head -1 || true)"
   if [ -z "$hit" ] && [ -f .life/SETUP_NEEDED ] && [ ! -f .life/setup-progress.md ] && ! is_template; then
-    echo "LIFE OS: not set up yet. Unless they asked for something else, reply like this: greet them, say in two lines what Life OS does (you stop being the memory; every session starts with one small step), and offer the quick start: three questions, about three minutes. On a yes, follow the life-architect skill."
+    echo "ALFRED: not set up yet. Unless they asked for something else, reply like this: greet them as ALFRED, say in two lines what you do (you keep their commitments and context so they stop being the memory; Sunday decides the week, weekdays start with one small step), and offer the quick start: three questions, about three minutes. On a yes, follow the life-architect skill."
   fi
   [ -n "$hit" ] || return 0
   echo "SAFETY CHECK (automatic, by keyword \"$hit\"): this message may carry crisis language. Before anything else, follow the crisis rule in AGENTS.md: stop the current task, respond with care, and if unsure ask plainly and kindly \"Are you having thoughts of ending your life?\". Include India's Tele-MANAS 14416 (free, 24/7) and 112 for immediate danger. Do not start a skill, a question menu or productivity talk first. If it is plainly not that (e.g. a button that disappears), ignore this note."
@@ -556,7 +556,7 @@ ritual_pick() { # prints "name<TAB>reason"
 }
 
 cmd_ritual() {
-  is_template && die "this is the public Life OS template (dev mode); rituals run in a personal copy"
+  is_template && die "this is the public ALFRED template (dev mode); rituals run in a personal copy"
   if [ -n "${1:-}" ]; then name="$1"; reason="asked for"; ritual_file "$name" >/dev/null || die "unknown ritual '$1' (plan-day, wrap-up, review, unstuck, steady)"
   else r="$(ritual_pick)"; name="$(printf '%s' "$r" | cut -f1)"; reason="$(printf '%s' "$r" | cut -f2)"; fi
   if [ "$name" = setup ]; then
@@ -584,7 +584,7 @@ day_name() { echo "Mon Tue Wed Thu Fri Sat Sun" | cut -d' ' -f"$1"; }
 add_days() { date -d "+$1 days" +%Y-%m-%d 2>/dev/null || date -v+"$1"d +%Y-%m-%d; }
 items() { section "$1" "$2" | grep '^- ' | sed 's/^- //' || true; }   # the "- " lines of one section
 week_agreed() { [ -f week.md ] && sed -n 's/^Agreed: \(20[0-9][0-9]-[01][0-9]-[0-3][0-9]\).*/\1/p' week.md | head -1 || true; }
-personal_only() { is_template && die "this is the public Life OS template (dev mode); personal writes go in a personal copy" || true; }
+personal_only() { is_template && die "this is the public ALFRED template (dev mode); personal writes go in a personal copy" || true; }
 need_file() { [ -f "$1" ] || die "no $1 here. restore it from the template: git checkout upstream/main -- $1 (or copy it from the template repo)"; }
 
 md_append() { # md_append file "Section" "- line": the line goes at the end of that section
@@ -740,7 +740,7 @@ cmd_pref() { # how they work, by evidence
 }
 
 cmd_resume() { # back after a gap or a drift: the agreement, the focus, where they stopped
-  is_template && die "this is the public Life OS template (dev mode); resume runs in a personal copy"
+  is_template && die "this is the public ALFRED template (dev mode); resume runs in a personal copy"
   [ -f .life/SETUP_NEEDED ] && die "not set up yet. run the life-architect skill, quick start"
   echo "resume: $(date '+%a %H:%M')"
   week_info
@@ -780,7 +780,7 @@ cmd_status() {
   echo "life: $(date '+%a %Y-%m-%d %H:%M') · adhd $adhd"
   if is_template; then template_note; return 0; fi
   if [ -f .life/SETUP_NEEDED ]; then
-    echo "Not set up yet. Type /life (Claude Code, OpenCode) or say \"set up my life os\" (Codex). About 3 minutes."
+    echo "Not set up yet. Say hello to ALFRED (or /life) to set up. About 3 minutes."
     [ -f .life/setup-progress.md ] && echo "setup: paused; progress saved in .life/setup-progress.md (offer to resume)"
     echo "next:"
     echo "  run the life-architect skill, quick start (3 questions)"
@@ -833,11 +833,11 @@ SYSTEMD_DIR="$HOME/.config/systemd/user"
 
 nudge_text() { # one line, the first Now item if there is one; never a count or a reproach
   if grep -q private "$NUDGE_CONF" 2>/dev/null; then
-    echo "Your one small step for today is ready. Open your agent and say hi."; return
+    echo "Your one small step for today is ready. Type alfred when you're ready."; return
   fi
   item="$(section queue.md "Now" | grep '^- ' | head -1 | sed -e 's/^- \[.\] //' -e 's/^- //' | cut -c1-90)"
-  if [ -n "$item" ]; then echo "One thing today: $item. Open your agent and say hi."
-  else echo "One small step is waiting whenever you're ready. Open your agent and say hi."; fi
+  if [ -n "$item" ]; then echo "One thing today: $item. Type alfred when you're ready."
+  else echo "One small step is waiting whenever you're ready. Type alfred when you're ready."; fi
 }
 
 nudge_show() {
@@ -846,8 +846,8 @@ nudge_show() {
   body="$(nudge_text)"
   if [ -n "${LIFE_NUDGE_DRY:-}" ]; then echo "$body"
   elif command -v osascript >/dev/null; then
-    osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "Life OS"' -e 'end run' "$body"
-  elif command -v notify-send >/dev/null; then notify-send "Life OS" "$body"
+    osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title "ALFRED"' -e 'end run' "$body"
+  elif command -v notify-send >/dev/null; then notify-send "ALFRED" "$body"
   else echo "$body"; fi
 }
 
@@ -871,16 +871,16 @@ EOF
     launchctl load "$LAUNCHD_PLIST"
   elif command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
     mkdir -p "$SYSTEMD_DIR"
-    printf '[Unit]\nDescription=Life OS daily nudge\n\n[Service]\nType=oneshot\nExecStart=/bin/bash "%s/life" nudge\n' "$ROOT" > "$SYSTEMD_DIR/life-os-nudge.service"
+    printf '[Unit]\nDescription=ALFRED daily nudge\n\n[Service]\nType=oneshot\nExecStart=/bin/bash "%s/life" nudge\n' "$ROOT" > "$SYSTEMD_DIR/life-os-nudge.service"
     # Persistent: if the computer was asleep at that time, nudge at the next wake instead.
-    printf '[Unit]\nDescription=Life OS daily nudge\n\n[Timer]\nOnCalendar=*-*-* %02d:%02d:00\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n' "$h" "$m" > "$SYSTEMD_DIR/life-os-nudge.timer"
+    printf '[Unit]\nDescription=ALFRED daily nudge\n\n[Timer]\nOnCalendar=*-*-* %02d:%02d:00\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n' "$h" "$m" > "$SYSTEMD_DIR/life-os-nudge.timer"
     systemctl --user daemon-reload
     systemctl --user enable --now life-os-nudge.timer >/dev/null 2>&1
   else
     echo "No launchd or systemd user session here (WSL?). To schedule it yourself, run daily: bash \"$ROOT/life\" nudge"
     return 0
   fi
-  echo "Nudge on: every day at $1, only on days you haven't opened Life OS yet. ./life nudge off stops it."
+  echo "Nudge on: every day at $1, only on days you haven't opened ALFRED yet. ./life nudge off stops it."
   command -v osascript >/dev/null || command -v notify-send >/dev/null || echo "note: no notify-send found; install libnotify so the nudge can show."
 }
 
@@ -993,7 +993,7 @@ cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first 
       *) die "unknown flag '$1'. usage: ./life setup --name \"..\" --thing \"..\" --adhd yes|no|trial [--step \"..\"]" ;;
     esac
   done
-  is_template && die "this is the public Life OS template, so their details would land in a public repo. set up in a private copy instead (README, \"Start here\")"
+  is_template && die "this is the public ALFRED template, so their details would land in a public repo. set up in a private copy instead (README, \"Start here\")"
   [ -f .life/SETUP_NEEDED ] || die "already set up. to change things: say \"re-tune\" (life-architect skill, retune mode)"
   [ -n "$name" ] && [ -n "$thing" ] || die 'usage: ./life setup --name "Kavya" --thing "book the passport slot" --adhd yes|no|trial [--step "open the site"]'
   case "$adhd" in yes|no|trial) ;; *) die "--adhd must be yes, no or trial";; esac
@@ -1016,14 +1016,14 @@ cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first 
   mv "$tmp" context.md
 
   # queue.md: drop the setup item, their one thing goes in Now
-  tmp="$(mktemp)"; grep -v 'to set up Life OS' queue.md > "$tmp"; mv "$tmp" queue.md
+  tmp="$(mktemp)"; grep -vE 'to set up (Life OS|ALFRED)' queue.md > "$tmp"; mv "$tmp" queue.md
   cmd_add --now "$thing" >/dev/null
 
   # current.md: the install entry goes; today's entry says where to start
   tmp="$(mktemp)"
   awk '{ raw = $0; sub(/\r$/, "", raw) } raw ~ /^## \{\{DATE\}\}/ { skip = 1; next } skip && raw ~ /^## / { skip = 0 } !skip { print }' current.md > "$tmp"
   mv "$tmp" current.md
-  cmd_log --topic "Life OS started" --done "Quick start: three questions" --stopped "${step:-$thing}" >/dev/null
+  cmd_log --topic "ALFRED started" --done "Quick start: three questions" --stopped "${step:-$thing}" >/dev/null
 
   # AGENTS.md: the personal section, between its markers only
   mode="$adhd"
@@ -1053,7 +1053,7 @@ cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first 
   echo "ok: set up for $name (adhd: $adhd)"
   cmd_check | sed 's/^/  /'
   echo "next:"
-  echo "  hand off in 3 lines: what exists now, tomorrow (\"type /life or just say hi\"), the first step: ${step:-$thing}"
+  echo "  hand off in 3 lines: what exists now, tomorrow (\"type alfred, or open the folder and say hello\"; Sunday is the weekly meeting), the first step: ${step:-$thing}"
 }
 
 cmd_archive() { # move current.md entries older than 4 weeks to archive/current-YYYY.md
@@ -1119,7 +1119,7 @@ cmd_check() {
       echo "reminder: this repo has a remote ($(git remote get-url origin)). Make sure it is private."
     fi
   fi
-  [ "$ok" = 1 ] && echo "Life OS check: all good."
+  [ "$ok" = 1 ] && echo "check: all good."
   [ "$ok" = 1 ]
 }
 
@@ -1157,7 +1157,7 @@ case "$CMD" in
   nudge) shift; cmd_nudge "$@" ;;
   help|-h|--help)
     cat <<'HELP'
-life: plain-text life OS. Files are the truth; these commands read and edit them safely.
+life: ALFRED's notebook tool. Files are the truth; these commands read and edit them safely.
 Ids: n1 = first Now item (x Next, w Waiting on, i Inbox, s Someday, d Done this week).
 Any id can also be a unique quoted piece of the text: ./life done "passport".
 Errors go to stderr, exit 2, and say how to fix the call.
@@ -1205,7 +1205,7 @@ upkeep
   ./life archive                  move current.md entries older than 4 weeks to archive/
   ./life check                    structure problems, each with its fix
   ./life guard                    template repo only: refuse a commit carrying personal data (pre-commit hook: git config core.hooksPath .github/hooks)
-  ./life nudge on HH:MM [private] | off | test    daily desktop nudge, only on days Life OS wasn't opened
+  ./life nudge on HH:MM [private] | off | test    daily desktop nudge, only on days ALFRED wasn't opened
 HELP
     ;;
   *) die "unknown command '$1'. run: ./life help" ;;

@@ -1,6 +1,6 @@
 # Life map
 
-The index of this Life OS. Read this first in every session, then `current.md`.
+The index of ALFRED's notes on this person. Read this first in every session, then `current.md`.
 Keep it a map, not a log: add a line when something new appears, fix a line
 when it changes, never record progress here.
 

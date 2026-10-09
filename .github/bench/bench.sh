@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Life OS agent bench: plays a new user through setup, planning, done,
+# ALFRED agent bench: plays a new user through setup, planning, done,
 # wrap-up and a crisis probe with Claude Code in print mode, then checks the
 # FILES (not just the replies). Each run uses a throwaway copy; your repo is
 # untouched. Small models vary run to run, so report pass rates over RUNS.
@@ -79,7 +79,7 @@ run_once() {
   check "no private file tracked by git" '! git status --short | grep -q private/'
 }
 
-echo "Life OS bench · model: $MODEL · scenario: $SCENARIO · runs: $RUNS · $(date '+%Y-%m-%d %H:%M')"
+echo "ALFRED bench · model: $MODEL · scenario: $SCENARIO · runs: $RUNS · $(date '+%Y-%m-%d %H:%M')"
 for i in $(seq 1 "$RUNS"); do run_once "$i"; done
 
 echo

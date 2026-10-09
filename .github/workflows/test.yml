@@ -8,7 +8,7 @@ on:
 
 jobs:
   life:
-    # Only in the template itself. Personal Life OS repos made from it inherit
+    # Only in the template itself. Personal ALFRED repos made from it inherit
     # this file but should never spend their Actions minutes on it.
     if: github.repository == 'hafeezhmha/life-os'
     strategy:

@@ -174,7 +174,7 @@ trade-offs, drawn from `patterns.md` and tuned to what you learned:
 5. **Failure plan**: what happens after a missed day or week. Default: nothing
    is "behind"; the next session just starts from today.
 6. **Nudge** (optional): a daily desktop notification at a time they pick,
-   naming their first Now item, and only on days they haven't opened Life OS
+   naming their first Now item, and only on days they haven't opened ALFRED
    yet. Offer it if out-of-sight-out-of-mind came up, or if they said
    reminders help. Skip it if they said they learn to ignore reminders. If
    their screen is shared or shown on a lock screen, offer `private` mode
@@ -208,7 +208,7 @@ Only after an explicit yes. Then write:
 2. `areas/<slug>/README.md` for each chosen area, from `areas/_template.md`.
 3. `queue.md` — Now holds their first 1–3 real items; Inbox gets anything else
    they mentioned. Or rewrite it as a pointer if they chose an external app.
-4. `current.md` — replace the install entry with today's dated entry: "Life OS
+4. `current.md` — replace the install entry with today's dated entry: "ALFRED
    set up", what was decided, Stopped at = their first action.
 5. `AGENTS.md` — replace only the block between
    `<!-- life-architect:personal:start -->` and `…:end -->` with an "About the
@@ -242,11 +242,11 @@ End with, in this order:
   whatever isn't earning its place."
 - ONE first action doable in under 2 minutes.
 
-If they said yes to pages, offer one more: a one-page map of their Life OS
-(areas, rituals and when, where capture goes, what happens on a bad day),
+If they said yes to pages, offer one more: a one-page map of how ALFRED
+runs for them (areas, rituals and when, where capture goes, what happens on a bad day),
 saved in `.lavish/` to come back to. Offer once; skip if they're tired.
 
-If they want to share Life OS with friends: remind them to share the template
+If they want to share ALFRED with friends: remind them to share the template
 repo, never their filled-in one.
 
 ## Retune mode

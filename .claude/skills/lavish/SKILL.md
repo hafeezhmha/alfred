@@ -31,7 +31,7 @@ $ARGUMENTS
 If the request above is non-empty, the user invoked `/lavish` explicitly - fetch the current CLI guidance, then build that artifact.
 If it is empty, infer what to visualize from the conversation.
 
-## Life OS guardrails (added by this template, not upstream)
+## ALFRED guardrails (added by this template, not upstream)
 
 This repo holds personal data: health, money, relationships.
 
@@ -46,5 +46,5 @@ This repo holds personal data: health, money, relationships.
   OpenCode), run it again; feedback stays queued.
 - **Design for the reader**: one job per page, one decision per card, your
   recommendation preselected, short plain text, big click targets. Calm
-  colors; nothing red, no counts of what's undone. Life OS has no design
+  colors; nothing red, no counts of what's undone. ALFRED has no design
   system, so use the CLI's default (Tailwind + DaisyUI) with a calm theme.
