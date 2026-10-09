@@ -958,7 +958,7 @@ cmd_reviewed() { # no flags: stamp only. With --focus/--win: log the review, cle
       *) die "unknown flag '$1'. flags: --focus \"..\" (repeatable), --win \"..\" (repeatable)" ;;
     esac
   done
-  if [ -z "$focus$wins" ]; then review_stamp; echo "ok: weekly review stamped for $TODAY"; return; fi
+  if [ -z "$focus$wins" ]; then review_stamp; echo "ok: Sunday meeting stamped for $TODAY"; return; fi
   q_load
   set --
   while IFS= read -r t; do [ -n "$t" ] && set -- "$@" --done "$t"; done <<EOF
@@ -1193,7 +1193,7 @@ the week and how they work
   ./life pref move "<words>" said|seen|guessing|trying|retired [--why ".."]
 setup and review
   ./life setup --name "..." --thing "..." --adhd yes|no|trial [--step "..."]   quick-start build, one call
-  ./life review                   weekly review packet: done, this week's log, inbox, areas, therapy count
+  ./life review                   the Sunday meeting packet: last week's agreement, for Sunday, experiments, stale items, done, log, inbox, areas
   ./life reviewed --focus "a" [--focus "b"] [--win ".."]   log the review, clear Done, stamp, archive
 rituals and the stop gate
   ./life pending [clear [item|all]]   the write a started ritual still owes (plan, log, reviewed)

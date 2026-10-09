@@ -350,7 +350,7 @@ then (Haiku 4.5, four phrasings, 5 runs each):
   ([arXiv 2310.01798](https://arxiv.org/abs/2310.01798)), and pass rates
   over several runs, not one ([τ-bench, arXiv 2406.12045](https://arxiv.org/abs/2406.12045)).
 
-Tests: 201 launcher checks run on Linux and macOS in CI, plus shellcheck.
+Tests: 303 launcher checks run on Linux and macOS in CI, plus shellcheck.
 
 </details>
 

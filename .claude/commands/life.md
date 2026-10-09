@@ -18,8 +18,8 @@ Otherwise run `./life ritual` first; its first line decides, not you:
   "About the person" is short or a `learn:` line is showing.
 - They asked for one ("wrap up", "Sunday meeting" or "review", "plan my
   day"): `./life ritual wrap-up` / `review` / `plan-day` instead.
-- Otherwise follow the ritual it printed. It also says whether a weekly
-  review is due (offer it, don't start it).
+- Otherwise follow the ritual it printed. It also says whether the Sunday
+  meeting is due (offer it, don't start it).
 
 Say which ritual in one line, then follow its steps. They can switch anytime
 ("actually, wrap up"): run `./life ritual <name>` without comment.
