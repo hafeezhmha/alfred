@@ -311,7 +311,7 @@ Most are built by the community, so read the README before installing.
 | [`notion-axi`](https://github.com/maximebrmd/notion-axi) | Notion pages and databases | Notion's own CLI first: `curl -fsSL https://ntn.dev \| bash` and `ntn login`; then `npx skills add maximebrmd/notion-axi --skill notion-axi -g` (needs Node 20+) |
 | [`gws-axi`](https://github.com/JarvusInnovations/gws-axi) | Gmail, Google Calendar, Docs, Drive. Drafts mail, never sends it | `npm install -g gws-axi`, then ask your agent: "Run `gws-axi auth setup` and walk me through it". You make your own Google Cloud sign-in once; tokens stay on your computer |
 | [`obsidian-axi`](https://github.com/AndersHoffmann/obsidian-axi) | Notes in an Obsidian vault | Nothing to install: `npx -y @andershoffmann/obsidian-axi` |
-| [`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi) (mine) | TickTick tasks and lists. Every write is a dry run until you add `--yes` | Not on npm yet, so from a clone: `git clone https://github.com/hafeezhmha/ticktick-axi.git`, then `pnpm install && pnpm run build && pnpm link --global`. Then a free TickTick developer app and `ticktick-axi auth login` (its README walks you through) |
+| [`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi) (mine) | TickTick tasks and lists. Every write is a dry run until you add `--yes` | `npx skills add hafeezhmha/ticktick-axi --skill ticktick-axi -g`, then a free TickTick developer app and, in your terminal, `npx -y ticktick-axi auth login` (its README walks you through) |
 
 Also in the catalog: `msgraph-axi` (Outlook mail and calendar),
 `calcom-axi`, `trello-axi`, `asana-axi`, `slack-axi` (read, search,
@@ -344,9 +344,9 @@ Being built now, not ready yet:
 
 - **Speech to text inside ALFRED.** Talk to him directly instead of
   dictating into a separate chat app first. In development.
-- **[`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi) on npm
-  and in the AXI catalog.** My TickTick connector works today from a clone;
-  next it gets a one-line install.
+- **[`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi) in the AXI
+  catalog.** My TickTick connector is on npm; next it goes into the catalog
+  at axi.md.
 
 Want one of these sooner, or something else entirely?
 [Tell me](https://github.com/hafeezhmha/alfred/issues/new?template=how-it-went.md).
