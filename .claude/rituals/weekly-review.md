@@ -9,8 +9,9 @@ their notes say "pages: yes", offer once to show step 5 as a page (`lavish`).
 
 0. **One read:** `./life review` (last week's agreement, For Sunday,
    follow-ups, experiments due, stale items, done, the log, inbox, areas,
-   therapy-note count). Calendar or task app connected? Read the coming week
-   from it too. Prepare from this; don't recite it.
+   therapy-note count). Calendar or task app connected (an MCP server, or an
+   AXI tool named in `context.md` Tools)? Read the coming week from it too.
+   Prepare from this; don't recite it.
 1. **What's changed.** "What's changed this week?" If they stall, offer one
    prompt at a time: work, money, health, people, home, interests. Ask after
    each Follow up item by name. Hopelessness: the crisis rule in `AGENTS.md`

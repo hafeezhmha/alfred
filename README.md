@@ -182,7 +182,9 @@ walk, in an auto, halfway through a meeting. I keep one chat in ChatGPT
 (Claude's app works just as well) only for capture, and mostly talk to it
 with voice. It turns my rambling into a clean list. When I sit down, I paste
 that list to ALFRED with "Capture:", he files each line into the Inbox, and
-the Sunday meeting sorts it.
+the Sunday meeting sorts it. Where my tasks already live in an app, ALFRED
+reads them through an AXI connector instead: ClickUp for work, and a
+TickTick one I built for myself ([connectors](#connectors-plug-in-an-axi-tool)).
 
 If you'd like the same capture chat, start it with this:
 
@@ -277,16 +279,63 @@ the log, your About section) are never touched.
 |---|---|
 | **Agents** | Claude Code, Codex and OpenCode: same files, same rules |
 | **Capture** | Any chat or notes app, by pasting ("Capture: ..."); `phone.md` from the GitHub app |
-| **Your task app** | It can stay the source of truth: `queue.md` becomes a pointer to it, and ALFRED works through you |
-| **Calendar** | Nothing built in. If your agent already has its own calendar connection (an MCP server), the Sunday meeting reads the coming week from it |
+| **Your task app** | It can stay the source of truth: `queue.md` becomes a pointer to it. With an [AXI connector](#connectors-plug-in-an-axi-tool) (ClickUp, Notion, Trello, Asana...) ALFRED reads it himself |
+| **Calendar and mail** | Through an [AXI connector](#connectors-plug-in-an-axi-tool) (Google: `gws-axi`; Outlook: `msgraph-axi`), or your agent's own calendar connection (an MCP server). The Sunday meeting reads the coming week from it |
 | **Reminders** | Desktop notifications on macOS and Linux (`./life nudge`) |
 | **Backup** | Your private GitHub copy (`./life backup`) |
 | **Pages** | A local browser page (`./life page`); click-through review pages with Node.js (`lavish`) |
 
-**Not yet:** no built-in connectors to Google Calendar, Todoist, TickTick,
-Notion, WhatsApp or email, no phone app, and no voice input inside ALFRED.
-He never reaches into those apps on his own; you bring things in, and he
-takes it from there.
+**Not yet:** ALFRED ships no connectors of his own; they come from the AXI
+catalog below. Nothing exists yet for WhatsApp, a phone app, or voice input
+inside ALFRED, and my TickTick connector isn't published yet. Where there's
+no connector, you bring things in by pasting, and he takes it from there.
+
+### Connectors: plug in an AXI tool
+
+ALFRED's `./life` tool follows [AXI](https://axi.md/), a set of design
+rules for command-line tools that AI agents drive well. Other people have
+built AXI tools for the apps you already use, and ALFRED can run them the
+same way he runs `./life`.
+
+**Where to look:** go to [axi.md](https://axi.md/) and scroll to the
+catalog, which has two lists, "Official" and "Community". Each name links to
+its GitHub page, and the install steps are in that page's README. If your
+app isn't listed, search GitHub for `<app>-axi` (for example `todoist-axi`).
+Most are built by the community, so read the README before installing.
+
+**Ones that fit a life system:**
+
+| Connector | What it reaches | Install (from its own README) |
+|---|---|---|
+| [`clickup-axi`](https://github.com/JanSuthacheeva/clickup-axi) | ClickUp tasks, status changes, comments | `npx skills add JanSuthacheeva/clickup-axi --skill clickup-axi -g`, then in your terminal `clickup-axi auth login` |
+| [`notion-axi`](https://github.com/maximebrmd/notion-axi) | Notion pages and databases | Notion's own CLI first: `curl -fsSL https://ntn.dev \| bash` and `ntn login`; then `npx skills add maximebrmd/notion-axi --skill notion-axi -g` (needs Node 20+) |
+| [`gws-axi`](https://github.com/JarvusInnovations/gws-axi) | Gmail, Google Calendar, Docs, Drive. Drafts mail, never sends it | `npm install -g gws-axi`, then ask your agent: "Run `gws-axi auth setup` and walk me through it". You make your own Google Cloud sign-in once; tokens stay on your computer |
+| [`obsidian-axi`](https://github.com/AndersHoffmann/obsidian-axi) | Notes in an Obsidian vault | Nothing to install: `npx -y @andershoffmann/obsidian-axi` |
+
+Also in the catalog: `msgraph-axi` (Outlook mail and calendar),
+`calcom-axi`, `trello-axi`, `asana-axi`, `slack-axi` (read, search,
+drafts) and `otter-axi` (meeting transcripts).
+
+**Hooking one up to ALFRED:**
+
+1. Install it and sign in, following its README. Sign-in happens in your
+   own terminal, and tokens stay on your computer.
+2. Tell ALFRED in one sentence, for example: "My work tasks live in ClickUp;
+   read them with clickup-axi." He writes that into `context.md` (Tools),
+   so every session knows.
+3. From then on, the Sunday meeting reads your week from it, and the brain
+   dump checks it for duplicates before adding anything.
+4. Writes stay your call. Changing a status, commenting or drafting an
+   email happens only after your yes, each time, like everything that
+   leaves this repo. Start read-only if you're unsure.
+
+The first time your agent runs a new connector, it asks permission. That's
+expected.
+
+**Build your own.** If your app has no connector, `npx skills add
+kunchenguid/axi` gives your agent AXI's design rules and scaffolding. That's
+how I built my TickTick one. Once it works, the axi.md catalog links to the
+steps for adding it.
 
 ## Coming next
 
@@ -294,8 +343,8 @@ Being built now, not ready yet:
 
 - **Speech to text inside ALFRED.** Talk to him directly instead of
   dictating into a separate chat app first. In development.
-- **Connectors, read-only first.** Calendar and task apps, so the Sunday
-  meeting can see your week without you pasting it in.
+- **`ticktick-axi`.** The TickTick connector I use myself, published to
+  the AXI catalog once it's ready for other people.
 
 Want one of these sooner, or something else entirely?
 [Tell me](https://github.com/hafeezhmha/alfred/issues/new?template=how-it-went.md).
@@ -311,7 +360,7 @@ Want one of these sooner, or something else entirely?
 | **Small beats complete** | At most 3 things in Now, 3 outcomes a week. On a low-energy day, 1 thing is a full day. |
 | **Energy before time** | Hard things go where your brain is actually sharp. |
 | **Learns you, carefully** | What you said, what he's seen at least three times, what you're trying. One bad day never rewrites the picture. |
-| **Your tools keep their jobs** | Your task app, notes and calendar stay where they are; ALFRED learns which does what and works alongside them, through you ([no connectors yet](#what-connects-today-and-what-doesnt-yet)). |
+| **Your tools keep their jobs** | Your task app, notes and calendar stay where they are; ALFRED learns which does what and works alongside them, through you, or through an [AXI connector](#connectors-plug-in-an-axi-tool). |
 | **Skills, not therapy** | When feelings run the show: small, well-researched skills (DBT, ACT, self-compassion), in the present. Your therapist's plan comes first. Talk in parts ("a part of me doesn't want to") if you like, the IFS way. |
 | **Your call, always** | He suggests with options; you decide. He never sends, books, buys or deletes anything without your yes, each time. |
 | **It's yours** | Plain markdown in a private git repo, saved locally as you go and backed up to GitHub when you say. Switch agents or stop using it; your history stays readable forever. |
