@@ -20,7 +20,9 @@ in a terminal best.</sub>
 [Start](#start-here-about-3-minutes) ·
 [A week with ALFRED](#a-week-with-alfred) ·
 [Talking to ALFRED](#talking-to-alfred) ·
+[How I use it](#how-i-use-it-and-how-to-make-it-yours) ·
 [Extras](#extras-all-optional) ·
+[What connects](#what-connects-today-and-what-doesnt-yet) ·
 [Promises](#promises-alfred-keeps) ·
 [For the nerds](#for-the-nerds-does-a-small-model-actually-cope) ·
 [Fine print](#the-fine-print)
@@ -171,6 +173,47 @@ Plain words, in every agent. The ones that do the most:
 Shortcuts in Claude Code and OpenCode: `/life`, `/stuck`, `/grill-me`.
 "adhd mode on" and "stop adhd mode" work anytime.
 
+## How I use it (and how to make it yours)
+
+This is how I run ALFRED day to day. Take what fits, change the rest.
+
+**Capture anywhere, sort with ALFRED.** Thoughts arrive at bad times: on a
+walk, in an auto, halfway through a meeting. I keep one chat in ChatGPT
+(Claude's app works just as well) only for capture, and mostly talk to it
+with voice. It turns my rambling into a clean list. When I sit down, I paste
+that list to ALFRED with "Capture:", he files each line into the Inbox, and
+the Sunday meeting sorts it.
+
+If you'd like the same capture chat, start it with this:
+
+```
+You're my capture inbox. When I send a note or a voice message, reply only
+with a list: one line per task or thought, starting with "- ", with any
+date or deadline I mentioned. No advice, no questions, no summary.
+```
+
+**Capture, organise, and it keeps itself going.** That's the whole loop.
+Everything you capture lands in the Inbox. Sunday decides the week, and
+weekdays run from it. The files save themselves after every reply, a missed
+day restarts from today, and backups and updates are offered when they're
+due. Your part is showing up and saying yes or no.
+
+**Reminders, your way.** I use the desktop nudge. A phone alarm or a
+repeating calendar event does the same job, if that's what you already
+trust. Nothing in ALFRED depends on which one.
+
+**Make it yours.** It's all plain text, so nothing here is fixed:
+
+- **The name.** Not an ALFRED person? Say "call yourself Jeeves from now
+  on" and he notes it in your preferences, which updates never touch. The
+  front door can be any word too: `jeeves() { cd ~/alfred && claude "${*:-Hello.}"; }`.
+- **The rhythm.** A shorter Sunday meeting, a later start, replies without
+  the ADHD shaping: just tell him. What you say goes into
+  `preferences.md` and shapes every plan after that.
+- **The rules.** `AGENTS.md` and `.claude/rituals/` are yours to edit.
+  `./life update` lists every file it would replace before it changes
+  anything, so you can keep your own version.
+
 ## Extras, all optional
 
 None of these is needed for ALFRED to work. Each is one sentence away
@@ -228,6 +271,35 @@ meeting offers `./life update`: it shows what's new in the template, and
 on your yes copies the new code in. Your files (`context.md`, `queue.md`,
 the log, your About section) are never touched.
 
+## What connects today, and what doesn't yet
+
+| | Today |
+|---|---|
+| **Agents** | Claude Code, Codex and OpenCode: same files, same rules |
+| **Capture** | Any chat or notes app, by pasting ("Capture: ..."); `phone.md` from the GitHub app |
+| **Your task app** | It can stay the source of truth: `queue.md` becomes a pointer to it, and ALFRED works through you |
+| **Calendar** | Nothing built in. If your agent already has its own calendar connection (an MCP server), the Sunday meeting reads the coming week from it |
+| **Reminders** | Desktop notifications on macOS and Linux (`./life nudge`) |
+| **Backup** | Your private GitHub copy (`./life backup`) |
+| **Pages** | A local browser page (`./life page`); click-through review pages with Node.js (`lavish`) |
+
+**Not yet:** no built-in connectors to Google Calendar, Todoist, TickTick,
+Notion, WhatsApp or email, no phone app, and no voice input inside ALFRED.
+He never reaches into those apps on his own; you bring things in, and he
+takes it from there.
+
+## Coming next
+
+Being built now, not ready yet:
+
+- **Speech to text inside ALFRED.** Talk to him directly instead of
+  dictating into a separate chat app first. In development.
+- **Connectors, read-only first.** Calendar and task apps, so the Sunday
+  meeting can see your week without you pasting it in.
+
+Want one of these sooner, or something else entirely?
+[Tell me](https://github.com/hafeezhmha/alfred/issues/new?template=how-it-went.md).
+
 ## Promises ALFRED keeps
 
 | Promise | What that means in practice |
@@ -239,7 +311,7 @@ the log, your About section) are never touched.
 | **Small beats complete** | At most 3 things in Now, 3 outcomes a week. On a low-energy day, 1 thing is a full day. |
 | **Energy before time** | Hard things go where your brain is actually sharp. |
 | **Learns you, carefully** | What you said, what he's seen at least three times, what you're trying. One bad day never rewrites the picture. |
-| **Your tools keep their jobs** | Your task app, notes and calendar stay where they are; ALFRED learns which does what and works alongside them, through you (no connectors yet). |
+| **Your tools keep their jobs** | Your task app, notes and calendar stay where they are; ALFRED learns which does what and works alongside them, through you ([no connectors yet](#what-connects-today-and-what-doesnt-yet)). |
 | **Skills, not therapy** | When feelings run the show: small, well-researched skills (DBT, ACT, self-compassion), in the present. Your therapist's plan comes first. Talk in parts ("a part of me doesn't want to") if you like, the IFS way. |
 | **Your call, always** | He suggests with options; you decide. He never sends, books, buys or deletes anything without your yes, each time. |
 | **It's yours** | Plain markdown in a private git repo, saved locally as you go and backed up to GitHub when you say. Switch agents or stop using it; your history stays readable forever. |
