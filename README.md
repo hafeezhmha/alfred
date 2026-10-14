@@ -183,8 +183,9 @@ walk, in an auto, halfway through a meeting. I keep one chat in ChatGPT
 with voice. It turns my rambling into a clean list. When I sit down, I paste
 that list to ALFRED with "Capture:", he files each line into the Inbox, and
 the Sunday meeting sorts it. Where my tasks already live in an app, ALFRED
-reads them through an AXI connector instead: ClickUp for work, and a
-TickTick one I built for myself ([connectors](#connectors-plug-in-an-axi-tool)).
+reads them through an AXI connector instead: ClickUp for work, and for
+TickTick, [`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi), a
+connector I built for myself ([connectors](#connectors-plug-in-an-axi-tool)).
 
 If you'd like the same capture chat, start it with this:
 
@@ -287,8 +288,7 @@ the log, your About section) are never touched.
 
 **Not yet:** ALFRED ships no connectors of his own; they come from the AXI
 catalog below. Nothing exists yet for WhatsApp, a phone app, or voice input
-inside ALFRED, and my TickTick connector isn't published yet. Where there's
-no connector, you bring things in by pasting, and he takes it from there.
+inside ALFRED. Where there's no connector, you bring things in by pasting, and he takes it from there.
 
 ### Connectors: plug in an AXI tool
 
@@ -311,6 +311,7 @@ Most are built by the community, so read the README before installing.
 | [`notion-axi`](https://github.com/maximebrmd/notion-axi) | Notion pages and databases | Notion's own CLI first: `curl -fsSL https://ntn.dev \| bash` and `ntn login`; then `npx skills add maximebrmd/notion-axi --skill notion-axi -g` (needs Node 20+) |
 | [`gws-axi`](https://github.com/JarvusInnovations/gws-axi) | Gmail, Google Calendar, Docs, Drive. Drafts mail, never sends it | `npm install -g gws-axi`, then ask your agent: "Run `gws-axi auth setup` and walk me through it". You make your own Google Cloud sign-in once; tokens stay on your computer |
 | [`obsidian-axi`](https://github.com/AndersHoffmann/obsidian-axi) | Notes in an Obsidian vault | Nothing to install: `npx -y @andershoffmann/obsidian-axi` |
+| [`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi) (mine) | TickTick tasks and lists | Code coming soon; install steps will be in its README |
 
 Also in the catalog: `msgraph-axi` (Outlook mail and calendar),
 `calcom-axi`, `trello-axi`, `asana-axi`, `slack-axi` (read, search,
@@ -334,8 +335,8 @@ expected.
 
 **Build your own.** If your app has no connector, `npx skills add
 kunchenguid/axi` gives your agent AXI's design rules and scaffolding. That's
-how I built my TickTick one. Once it works, the axi.md catalog links to the
-steps for adding it.
+how I built [`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi).
+Once yours works, the axi.md catalog links to the steps for adding it.
 
 ## Coming next
 
@@ -343,8 +344,9 @@ Being built now, not ready yet:
 
 - **Speech to text inside ALFRED.** Talk to him directly instead of
   dictating into a separate chat app first. In development.
-- **`ticktick-axi`.** The TickTick connector I use myself, published to
-  the AXI catalog once it's ready for other people.
+- **[`ticktick-axi`](https://github.com/hafeezhmha/ticktick-axi).** My
+  TickTick connector. The repo is up; the code goes in shortly, and then it
+  goes to the AXI catalog.
 
 Want one of these sooner, or something else entirely?
 [Tell me](https://github.com/hafeezhmha/alfred/issues/new?template=how-it-went.md).
