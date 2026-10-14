@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Life OS launcher. Plain bash, works on macOS (bash 3.2) and Linux.
+# ALFRED launcher. Plain bash, works on macOS (bash 3.2) and Linux.
 set -eu
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -22,9 +22,9 @@ TODAY="$(date +%Y-%m-%d)"
 die() { echo "error: $*" >&2; exit 2; }
 
 # ---------- the public template vs a personal copy ----------
-# The template's own repo is for developing Life OS. Personal data never goes
+# The template's own repo is for developing ALFRED. Personal data never goes
 # there: setup refuses, start says "dev:", and `./life guard` (pre-commit hook)
-# blocks commits that carry a personal Life OS.
+# blocks commits that carry a personal ALFRED.
 TEMPLATE_RE='github\.com[:/]hafeezhmha/(alfred|life-os)(\.git)?/?$'   # life-os: the name before the rename
 is_template() { u="$(git remote get-url origin 2>/dev/null)" || return 1; printf '%s' "$u" | grep -Eq "$TEMPLATE_RE"; }
 template_note() {
@@ -955,7 +955,7 @@ cmd_start() { # the whole session-start read, in one call, for every agent
 }
 
 NUDGE_CONF=".life/nudge"
-LAUNCHD_PLIST="$HOME/Library/LaunchAgents/com.life-os.nudge.plist"
+LAUNCHD_PLIST="$HOME/Library/LaunchAgents/com.alfred.nudge.plist"
 SYSTEMD_DIR="$HOME/.config/systemd/user"
 
 nudge_text() { # one line, the first Now item if there is one; never a count or a reproach
@@ -989,7 +989,7 @@ nudge_on() {
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>com.life-os.nudge</string>
+  <key>Label</key><string>com.alfred.nudge</string>
   <key>ProgramArguments</key><array><string>/bin/bash</string><string>$ROOT/life</string><string>nudge</string></array>
   <key>StartCalendarInterval</key><dict><key>Hour</key><integer>$h</integer><key>Minute</key><integer>$m</integer></dict>
 </dict></plist>
@@ -998,11 +998,11 @@ EOF
     launchctl load "$LAUNCHD_PLIST"
   elif command -v systemctl >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
     mkdir -p "$SYSTEMD_DIR"
-    printf '[Unit]\nDescription=ALFRED daily nudge\n\n[Service]\nType=oneshot\nExecStart=/bin/bash "%s/life" nudge\n' "$ROOT" > "$SYSTEMD_DIR/life-os-nudge.service"
+    printf '[Unit]\nDescription=ALFRED daily nudge\n\n[Service]\nType=oneshot\nExecStart=/bin/bash "%s/life" nudge\n' "$ROOT" > "$SYSTEMD_DIR/alfred-nudge.service"
     # Persistent: if the computer was asleep at that time, nudge at the next wake instead.
-    printf '[Unit]\nDescription=ALFRED daily nudge\n\n[Timer]\nOnCalendar=*-*-* %02d:%02d:00\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n' "$h" "$m" > "$SYSTEMD_DIR/life-os-nudge.timer"
+    printf '[Unit]\nDescription=ALFRED daily nudge\n\n[Timer]\nOnCalendar=*-*-* %02d:%02d:00\nPersistent=true\n\n[Install]\nWantedBy=timers.target\n' "$h" "$m" > "$SYSTEMD_DIR/alfred-nudge.timer"
     systemctl --user daemon-reload
-    systemctl --user enable --now life-os-nudge.timer >/dev/null 2>&1
+    systemctl --user enable --now alfred-nudge.timer >/dev/null 2>&1
   else
     echo "No launchd or systemd user session here (WSL?). To schedule it yourself, run daily: bash \"$ROOT/life\" nudge"
     return 0
@@ -1013,9 +1013,9 @@ EOF
 
 nudge_off() {
   if [ -f "$LAUNCHD_PLIST" ]; then launchctl unload "$LAUNCHD_PLIST" 2>/dev/null || true; rm -f "$LAUNCHD_PLIST"; fi
-  if [ -f "$SYSTEMD_DIR/life-os-nudge.timer" ]; then
-    systemctl --user disable --now life-os-nudge.timer >/dev/null 2>&1 || true
-    rm -f "$SYSTEMD_DIR/life-os-nudge.timer" "$SYSTEMD_DIR/life-os-nudge.service"
+  if [ -f "$SYSTEMD_DIR/alfred-nudge.timer" ]; then
+    systemctl --user disable --now alfred-nudge.timer >/dev/null 2>&1 || true
+    rm -f "$SYSTEMD_DIR/alfred-nudge.timer" "$SYSTEMD_DIR/alfred-nudge.service"
     systemctl --user daemon-reload 2>/dev/null || true
   fi
   rm -f "$NUDGE_CONF"

@@ -191,15 +191,15 @@ out="$(HOME="$T/home" PATH="$T/stub:$PATH" ./life nudge on 7:5 2>&1)"; rc=$?
 out="$(HOME="$T/home" PATH="$T/stub:$PATH" ./life nudge on 09:05 2>&1)"
 has "nudge on confirms" "$out" "every day at 09:05"
 if [ "$(uname)" = Darwin ]; then
-  p="$T/home/Library/LaunchAgents/com.life-os.nudge.plist"
+  p="$T/home/Library/LaunchAgents/com.alfred.nudge.plist"
   has "launchd hour" "$(cat "$p")" "<key>Hour</key><integer>9</integer>"
   has "launchd minute" "$(cat "$p")" "<key>Minute</key><integer>5</integer>"
   has "launchd path" "$(cat "$p")" "<string>$T/life</string>"
   has "launchctl load" "$(cat "$T/calls")" "launchctl load"
 else
-  has "systemd time" "$(cat "$T/home/.config/systemd/user/life-os-nudge.timer")" "OnCalendar=*-*-* 09:05:00"
-  has "systemd path" "$(cat "$T/home/.config/systemd/user/life-os-nudge.service")" "ExecStart=/bin/bash \"$T/life\" nudge"
-  has "systemctl enable" "$(cat "$T/calls")" "--user enable --now life-os-nudge.timer"
+  has "systemd time" "$(cat "$T/home/.config/systemd/user/alfred-nudge.timer")" "OnCalendar=*-*-* 09:05:00"
+  has "systemd path" "$(cat "$T/home/.config/systemd/user/alfred-nudge.service")" "ExecStart=/bin/bash \"$T/life\" nudge"
+  has "systemctl enable" "$(cat "$T/calls")" "--user enable --now alfred-nudge.timer"
 fi
 HOME="$T/home" PATH="$T/stub:$PATH" ./life nudge off >/dev/null
 left="$(find "$T/home" -type f)"

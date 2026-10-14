@@ -20,6 +20,7 @@ in a terminal best.</sub>
 [Start](#start-here-about-3-minutes) ·
 [A week with ALFRED](#a-week-with-alfred) ·
 [Talking to ALFRED](#talking-to-alfred) ·
+[Extras](#extras-all-optional) ·
 [Promises](#promises-alfred-keeps) ·
 [For the nerds](#for-the-nerds-does-a-small-model-actually-cope) ·
 [Fine print](#the-fine-print)
@@ -60,7 +61,8 @@ Tools, Lunatask) will serve you better today, and that's a fine choice.
 ## Start here (about 3 minutes)
 
 1. **Make your own copy.** [Use this template](https://github.com/hafeezhmha/alfred/generate),
-   set it to **private** (it will hold your life), then clone it to `~/alfred`.
+   set it to **private** (it will hold your life), then clone it to `~/alfred`
+   (signing in to clone a private repo: see "What you need" below).
 2. **Add the front door,** once, so `alfred` opens him from any terminal:
 
    ```
@@ -82,7 +84,7 @@ interview, pausable, and it can show its proposal as a page you click
 through and mark up. (Pages need Node.js. Text works just as well.)
 
 <details>
-<summary><b>Using OpenCode or Codex instead?</b> (same ALFRED, one small difference)</summary>
+<summary><b>Using OpenCode or Codex instead?</b> (same ALFRED, a few differences)</summary>
 
 <br>
 
@@ -125,10 +127,10 @@ What differs:
 
 ## A week with ALFRED
 
-**Sunday: the meeting.** About 30 to 45 minutes, 10 on a rough week. ALFRED brings
-the agenda: what you agreed last week, what moved, what slipped, what's
-waiting, and whatever you put on the list mid-week. He asks what's changed,
-takes your brain dump, and helps you settle at most three outcomes and a
+**Sunday: the meeting.** About 30 to 45 minutes, 10 on a rough week. ALFRED
+brings the agenda: what you agreed last week, what moved, what slipped,
+what's waiting, and whatever you put on the list mid-week. He asks what's
+changed, takes your brain dump, and helps you settle at most three outcomes and a
 default for each day: where you'll work, what comes first, what's fixed. He
 names the likely snags, and you agree what to do if they happen.
 
@@ -139,13 +141,14 @@ names the likely snags, and you agree what to do if they happen.
 >
 > **First step (2 min):** open `fixtures/merchants.json` and copy the second merchant ID.
 
-No dashboard to keep up. No streak. No red numbers. No planning meeting every morning.
-Lost the thread at 3 pm? "I'm lost" brings back the plan and one next action.
+No dashboard to keep up. No streak. No red numbers. No planning meeting
+every morning. Lost the thread at 3 pm? "I'm lost" brings back the plan and one next action.
 A new thought? "For Sunday: should I drop the course?" waits for the meeting
 instead of eating your afternoon.
 
 **A missed Sunday breaks nothing.** Last week's plan stays in force, and he
-offers the 10-minute version.
+offers the 10-minute version. Away for a fortnight? He welcomes you back,
+skips the recap of what slipped, and starts from today.
 
 <sub>The example is <a href="examples/kavya/"><code>examples/kavya/</code></a>, a developer in Bangalore.</sub>
 
@@ -160,12 +163,18 @@ Plain words, in every agent. The ones that do the most:
 | "I'm lost" / "what was I doing?" | Today's plan, where you stopped, one next action. No replanning |
 | "For Sunday: ..." | Puts it on the meeting's agenda |
 | "Capture: call the dentist" | Into the inbox, sorted later |
+| "Back up" | Brings in notes from your phone, saves everything to your private GitHub copy |
 | "I'm stuck" / "I'm overwhelmed" | One question (the task or the feelings?), then the right help |
 | "Grill me on this" | The questions you'd rather skip, until a big decision is settled |
 | "I work better in cafés" | "Noted." He learns how you work by evidence, and tries ideas as small experiments |
 
 Shortcuts in Claude Code and OpenCode: `/life`, `/stuck`, `/grill-me`.
 "adhd mode on" and "stop adhd mode" work anytime.
+
+## Extras, all optional
+
+None of these is needed for ALFRED to work. Each is one sentence away
+("turn on the nudge", "open my page", "back up").
 
 ### A tap on the shoulder
 
@@ -182,8 +191,8 @@ It only shows up on days you haven't opened ALFRED yet. No counts, no "you
 missed", no second ping. Add `private` to keep your task off the lock screen,
 and `./life nudge off` stops it. He offers it at the end of your first real
 session, so you may never need to type this. (On WSL there's no scheduler to
-set; he'll say so.) For the Sunday meeting, a repeating reminder in the app you already
-trust (calendar, task app) works best, even with the laptop shut.
+set; he'll say so.) For the Sunday meeting, a repeating reminder in the app
+you already trust (calendar, task app) works best, even with the laptop shut.
 
 ### A page on the desk
 
@@ -212,7 +221,7 @@ into your Inbox and pushes everything to your private GitHub copy, so a dead
 laptop loses nothing. He refuses to push to a public repo, and so does
 git itself once setup has turned on the guard.
 
-### Getting fixes
+### Getting fixes (upkeep, once a month)
 
 Your copy is yours, so it doesn't change by itself. Once a month the Sunday
 meeting offers `./life update`: it shows what's new in the template, and
@@ -233,7 +242,7 @@ the log, your About section) are never touched.
 | **Your tools keep their jobs** | Your task app, notes and calendar stay where they are; ALFRED learns which does what and works alongside them, through you (no connectors yet). |
 | **Skills, not therapy** | When feelings run the show: small, well-researched skills (DBT, ACT, self-compassion), in the present. Your therapist's plan comes first. Talk in parts ("a part of me doesn't want to") if you like, the IFS way. |
 | **Your call, always** | He suggests with options; you decide. He never sends, books, buys or deletes anything without your yes, each time. |
-| **It's yours** | Plain markdown in a private git repo, saved locally as you go. Switch agents or stop using it; your history stays readable forever. |
+| **It's yours** | Plain markdown in a private git repo, saved locally as you go and backed up to GitHub when you say. Switch agents or stop using it; your history stays readable forever. |
 
 ## What's in the box
 
@@ -255,8 +264,10 @@ the log, your About section) are never touched.
 | `private/` | Git-ignored. For anything you'd never want on a server. |
 | `AGENTS.md` | Who ALFRED is and the rules he follows with you, every session, in every agent. |
 | `CLAUDE.md` | Tiny pointer so Claude Code finds `AGENTS.md`. |
-| `.claude/` | The three commands, the rituals they run (`rituals/`), and the skills behind them. |
+| `.claude/` | The three commands, the rituals they run (`rituals/`), the skills behind them, the hooks (`settings.json`) and the page (`page.py`). |
+| `.codex/hooks.json` | The same hooks for Codex: notes at start, the crisis safety net, the end-of-reply save. |
 | `.opencode/commands/` | Makes the same `/` commands work in OpenCode. |
+| `.github/` | Tests, the agent bench, and the git guard that refuses to push your copy to a public repo. |
 | `examples/kavya/` | A filled-in example (a developer in Bangalore), so you can see what "set up" looks like. |
 
 </details>
@@ -268,8 +279,8 @@ the log, your About section) are never touched.
 
 ALFRED's notebook tool. Built for AI agents first (the [AXI](https://axi.md/)
 idea): short, structured output, items with ids like `n1` or `x2`, and every
-answer ends with what to run next. He edits your files through it, so dates and formats come
-out right even with a smaller model. Your files stay plain markdown you can
+answer ends with what to run next. He edits your files through it, so dates
+and formats come out right even with a smaller model. Your files stay plain markdown you can
 edit by hand.
 
 ```
@@ -325,10 +336,11 @@ ALFRED is built so a cheap, small model can run him, not just a flagship.
 The trick is the [AXI](https://axi.md/) idea: the agent never hand-edits
 your files. `./life` does every edit, with ids like `n1`, dates and formats
 done in code, errors that name the fix, and a `next:` hint on every answer.
-Two small hooks back it up in Claude Code and Codex: a **gate** that won't
-let the agent wrap up while a write it owes is undone (and then saves your
-files with a local git commit, never a push), and a **safety net** that
-flags crisis language before the model replies.
+Hooks back it up in Claude Code and Codex: the session starts with one
+`./life start` read, a **gate** won't let the agent wrap up while a write
+it owes is undone (and then saves your files with a local git commit,
+never a push), and a **safety net** flags crisis language before the model
+replies.
 
 **The bench** plays a new person through a whole first day with Claude
 Haiku: setup, planning, "it's done", wrap-up, and a crisis message. Then it
@@ -338,6 +350,7 @@ it reports pass rates.
 ```
 RUNS=5 MODEL=haiku bash .github/bench/bench.sh      # the whole day, ~$0.33 a run
 SCENARIO=crisis RUNS=5 bash .github/bench/bench.sh  # just the crisis probes
+AGENT=codex SCENARIO=crisis RUNS=3 bash .github/bench/bench.sh   # the probes on Codex
 ```
 
 **Latest full run** (Haiku 4.5, 5 runs, 2026-09-26): **78 of 80 checks.**
@@ -356,8 +369,8 @@ SCENARIO=crisis RUNS=5 bash .github/bench/bench.sh  # just the crisis probes
 | Wrap-up: energy logged with its cause | 4/5 |
 
 Per run: about 19 agent turns, 510k input tokens (almost all cached: the
-agent's own system prompt, plus `AGENTS.md`, then 8.5 KB, now about 11 KB), 1.7k output tokens,
-**$0.32**.
+agent's own system prompt, plus `AGENTS.md`, 8.5 KB then, about 11 KB now),
+1.7k output tokens, **$0.32**.
 
 **Their exact words: 3/5 to 5/5.** Asking the model to pass them along
 wasn't reliable; Haiku would turn "got as far as the Jio one" into "got as
