@@ -427,7 +427,7 @@ cmd_gate() { # Stop hook for Claude Code and Codex (exit 2 = keep going). Run by
 # the gate by hand). Only these paths, never private/, one commit a day
 # (amended until it reaches a remote; earlier states stay in `git reflog`),
 # never pushes. A change that looks like a secret stops it until moved.
-AUTOSAVE_PATHS="AGENTS.md context.md current.md queue.md week.md preferences.md areas archive"
+AUTOSAVE_PATHS="AGENTS.md context.md current.md queue.md week.md preferences.md phone.md areas archive"
 AUTOSAVE_BLOCKED=".life/autosave-blocked"
 SECRET_RE="sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_|xox[abprs]-|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|/calendar/ical/[^ ]*/private-|(password|passwd|api[_-]?key|secret|token)[\"']? *[:=] *[^ ]{6,}"
 
@@ -460,14 +460,120 @@ autosave() {
     fi
   done
   msg="life: $TODAY"
+  id=""; git config user.email >/dev/null 2>&1 || id="-c user.name=ALFRED -c user.email=alfred@localhost"
   if [ "$(git log -1 --format=%s 2>/dev/null)" = "$msg" ] && [ -z "$(git branch -r --contains HEAD 2>/dev/null)" ]; then
     # shellcheck disable=SC2086
-    err="$(git commit -q --amend --no-edit -- $paths 2>&1)" || { autosave_block "git commit failed: $(printf '%s' "$err" | head -1)"; return 0; }
+    err="$(git $id commit -q --amend --no-edit -- $paths 2>&1)" || { autosave_block "git commit failed: $(printf '%s' "$err" | head -1)"; return 0; }
   else
     # shellcheck disable=SC2086
-    err="$(git commit -q -m "$msg" -- $paths 2>&1)" || { autosave_block "git commit failed: $(printf '%s' "$err" | head -1)"; return 0; }
+    err="$(git $id commit -q -m "$msg" -- $paths 2>&1)" || { autosave_block "git commit failed: $(printf '%s' "$err" | head -1)"; return 0; }
   fi
   rm -f "$AUTOSAVE_BLOCKED"
+}
+
+# ---------- GitHub: a personal copy must stay private ----------
+# Asks GitHub's public API without logging in: a public repo answers with
+# "private": false, a private one is invisible (404). Unknown (offline, not
+# GitHub) counts as not public, so nothing breaks without a network.
+repo_public() {
+  [ -n "${LIFE_VISIBILITY:-}" ] && { [ "$LIFE_VISIBILITY" = public ]; return; }   # tests
+  u="$(git remote get-url "${1:-origin}" 2>/dev/null)" || return 1
+  slug="$(printf '%s' "$u" | sed -nE 's#^.*github\.com[:/]([^/]+/[^/]+)$#\1#p' | sed 's/\.git$//; s#/$##')"
+  [ -n "$slug" ] && command -v curl >/dev/null || return 1
+  curl -s -m 5 "https://api.github.com/repos/$slug" 2>/dev/null | grep -Eq '"private": *false'
+}
+PUBLIC_FIX="make it private now: on GitHub, Settings > General > Danger Zone > Change visibility (or: gh repo edit --visibility private --accept-visibility-change-consequences)"
+
+cmd_prepush() { # pre-push hook (setup turns it on): never push a personal ALFRED to a public repo
+  is_template && return 0
+  [ -f .life/SETUP_NEEDED ] && return 0
+  if repo_public "${1:-origin}"; then
+    echo "ALFRED: refusing to push. $(git remote get-url "${1:-origin}") is PUBLIC, and this copy holds your life. $PUBLIC_FIX" >&2
+    exit 1
+  fi
+}
+
+PHONE_HEAD='# Phone
+
+Capture from your phone: open this file in the GitHub app, add a line that
+starts with "- ", and commit. The next backup (`./life backup`, or the
+Sunday meeting) moves each line into the Inbox and empties this list.
+'
+
+cmd_backup() { # backup: pull (phone notes), push to their private GitHub copy. Only on their yes.
+  is_template && die "this is the public ALFRED template (dev mode); back up a personal copy"
+  [ -f .life/SETUP_NEEDED ] && die "not set up yet. run the life-architect skill, quick start"
+  git rev-parse --git-dir >/dev/null 2>&1 || die "this folder is not a git repo, so there is nothing to back up. clone your private copy (README, \"Start here\")"
+  git remote get-url origin >/dev/null 2>&1 || die "no GitHub copy linked yet. make a PRIVATE repo, then: git remote add origin <its url>"
+  repo_public && die "$(git remote get-url origin) is PUBLIC. not backing up there. $PUBLIC_FIX"
+  autosave; [ -f "$AUTOSAVE_BLOCKED" ] && die "autosave is paused ($(cat "$AUTOSAVE_BLOCKED")); fix that first"
+  br="$(git rev-parse --abbrev-ref HEAD)"
+  if git ls-remote --exit-code --heads origin "$br" >/dev/null 2>&1; then
+    git pull -q --rebase --autostash origin "$br" 2>/dev/null || { git rebase --abort 2>/dev/null || true; die "the GitHub copy and this one both changed the same lines. nothing was pushed; ask for help merging (git status shows where)"; }
+  fi
+  n=0
+  if [ -f phone.md ]; then
+    while IFS= read -r l; do cmd_add "$(printf '%s' "$l" | sed 's/^- *//')" >/dev/null; n=$((n + 1)); done <<EOF
+$(grep '^- ' phone.md | sed 's/\r$//')
+EOF
+    [ "$n" = 0 ] || printf '%s' "$PHONE_HEAD" > phone.md
+    autosave
+  fi
+  git push -q origin "$br" 2>&1 | head -3 >&2 || true
+  if [ -n "$(git branch -r --contains HEAD 2>/dev/null)" ]; then echo "ok: backed up to $(git remote get-url origin)"
+  else die "the push didn't go through (signed in to GitHub on this computer?). nothing is lost; the files are fine here"; fi
+  [ "$n" = 0 ] || echo "  $n line(s) from phone.md are now in the Inbox"
+}
+
+# ---------- update: the template's newest code, never their data ----------
+TEMPLATE_URL="${LIFE_TEMPLATE_URL:-https://github.com/hafeezhmha/alfred.git}"
+UPDATE_CODE="life CLAUDE.md CONTRIBUTING.md README.md LICENSE NOTICE.md .gitignore .claude/page.py .claude/commands .claude/rituals .claude/skills .claude/settings.json .codex .opencode .github examples"
+UPDATE_DATA="context.md current.md queue.md week.md preferences.md phone.md"   # added only if missing
+
+cmd_update() { # update [--apply]: what changed in the template; --apply copies the code in, never touching their data
+  is_template && die "this is the template itself; use git pull"
+  work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
+  git clone -q --depth 1 "$TEMPLATE_URL" "$work/t" 2>/dev/null || die "couldn't reach $TEMPLATE_URL (offline?)"
+  t="$work/t"; ver="$(git -C "$t" log -1 --format='%h %ad' --date=short)"
+  mkdir -p .life; date +%s > .life/last-update
+  ch=""
+  for p in $UPDATE_CODE; do
+    [ -e "$t/$p" ] || continue
+    while IFS= read -r f; do cmp -s "$t/$f" "$f" || ch="$ch $f"; done <<FILES
+$(cd "$t" && find "$p" -type f | sort)
+FILES
+  done
+  # AGENTS.md: the template's contract around their own "About the person"
+  mine="$(awk '/life-architect:personal:start/{f=1; next} /life-architect:personal:end/{f=0} f' AGENTS.md 2>/dev/null)"
+  if grep -q 'life-architect:personal:end' AGENTS.md 2>/dev/null; then
+    P="$mine" awk '/life-architect:personal:start/ { print; print ENVIRON["P"]; skip = 1; next }
+      /life-architect:personal:end/ { skip = 0 } !skip { print }' "$t/AGENTS.md" > "$work/AGENTS.md"
+    cmp -s "$work/AGENTS.md" AGENTS.md || ch="$ch AGENTS.md"
+  fi
+  for f in $UPDATE_DATA; do [ -e "$f" ] || [ ! -e "$t/$f" ] || ch="$ch $f(new)"; done
+  if [ -z "$ch" ]; then echo "ok: up to date with the template ($ver)"; return 0; fi
+  if [ "${1:-}" != --apply ]; then
+    echo "update: the template ($ver) differs in $(echo $ch | wc -w | tr -d ' ') file(s); your data files are never touched"
+    echo $ch | tr ' ' '\n' | head -20 | sed 's/^/  /'
+    echo "next:"
+    echo "  tell them in one line what this brings (newest commits: https://github.com/hafeezhmha/alfred/commits); on their yes: ./life update --apply"
+    return 0
+  fi
+  for f in $ch; do
+    case "$f" in
+      *"(new)") f="${f%(new)}"; cp "$t/$f" "$f" ;;
+      AGENTS.md) cp "$work/AGENTS.md" AGENTS.md.new && mv AGENTS.md.new AGENTS.md ;;
+      *) mkdir -p "$(dirname "$f")"; cp "$t/$f" "$f.new" && mv "$f.new" "$f" ;;   # a new file, so the running ./life is never rewritten under itself
+    esac
+  done
+  [ -x life ] || chmod +x life
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    id=""; git config user.email >/dev/null 2>&1 || id="-c user.name=ALFRED -c user.email=alfred@localhost"
+    # shellcheck disable=SC2086,SC2046  # repo paths without spaces; $id is two fixed -c flags
+    git add -A -- $(echo $ch | sed 's/(new)//g') >/dev/null 2>&1 && git $id commit -q -m "ALFRED update to $ver" >/dev/null 2>&1 || true
+  fi
+  echo "ok: updated $(echo $ch | wc -w | tr -d ' ') file(s) to the template's $ver; your data files were not touched"
+  bash ./life check | sed 's/^/  /' || true
 }
 
 cmd_guard() { # pre-commit hook in the template's development clone: git config core.hooksPath .github/hooks
@@ -493,6 +599,8 @@ cmd_guard() { # pre-commit hook in the template's development clone: git config 
   week.md holds a real week"; fi
   if has_staged preferences.md && git show :preferences.md | grep -q '^- '; then why="$why
   preferences.md holds real preferences"; fi
+  if has_staged phone.md && git show :phone.md | grep -q '^- '; then why="$why
+  phone.md holds real notes"; fi
   [ -n "$why" ] || return 0
   echo "guard: this is the public ALFRED template, and this commit carries a personal ALFRED:$why" >&2
   echo "fix: git restore --staged <file> (and git restore <file> to undo it). Personal data belongs in a private copy." >&2
@@ -609,7 +717,10 @@ week_info() { # status lines: when the week was agreed, its outcomes, today's li
   a="$(week_agreed)"
   if [ -z "$a" ]; then echo "week: not agreed yet (the Sunday meeting sets it: ./life ritual review)"; return 0; fi
   ago="$(T="$TODAY" A="$a" awk "$DAYFN"' BEGIN { print day(ENVIRON["T"]) - day(ENVIRON["A"]) }')"
-  if [ "$ago" -ge 8 ]; then echo "week: agreed $a ($ago days ago), still in force; offer the 10-minute meeting, never \"you missed\""
+  if [ "$ago" -ge 14 ]; then
+    echo "week: agreed $a ($ago days ago), too old to steer today; offer the 10-minute meeting, never \"you missed\""
+    echo "  today: not from that week; Now is the plan"; return 0
+  elif [ "$ago" -ge 8 ]; then echo "week: agreed $a ($ago days ago), still in force; offer the 10-minute meeting, never \"you missed\""
   else echo "week: agreed $a ($ago days ago)"; fi
   o="$(items week.md Outcomes | awk '{ printf "%s%s", (NR > 1 ? "; " : ""), $0 }')"
   [ -z "$o" ] || echo "  outcomes: $o"
@@ -757,24 +868,27 @@ cmd_resume() { # back after a gap or a drift: the agreement, the focus, where th
 }
 
 # ---------- status and start ----------
-stopped_info() { # where they stopped: the top current.md entry
+stopped_info() { # where they stopped: the newest current.md entry that says (a Sunday meeting or a "done" entry may not)
   T="$TODAY" awk "$DAYFN"'
+    function when(d,   ago) { ago = day(ENVIRON["T"]) - day(d); if (ago == 0) return "today"; if (ago == 1) return "yesterday"; return ago " days ago" }
     { sub(/\r$/, "") }
     /^```/ { fence = !fence; next }
     fence { next }
-    /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/ { n++; if (n > 1) exit
-      d = substr($0, 4, 10); tp = $0; sub(/^## [^ ]+ *(— *)?/, "", tp); ago = day(ENVIRON["T"]) - day(d)
-      # plain if/else: macOS awk rejects chained ?: inside printf arguments
-      if (ago == 0) when = "today"; else if (ago == 1) when = "yesterday"; else when = ago " days ago"
-      printf "stopped: %s \"%s\" (%s)\n", d, tp, when; next }
-    n == 1 && /^Stopped at:/ { f = 1; sub(/^Stopped at: */, ""); s = $0; next }
-    n == 1 && /^Energy:/ { en = $0; sub(/^Energy: */, "", en); f = 0; next }
-    n == 1 && /^Their words:/ { sd = $0; sub(/^Their words: */, "", sd); f = 0; next }
-    n == 1 && /^[ \t]*$/ { f = 0; next }
-    n == 1 && f { s = s " " $0; next }
+    /^## 20[0-9][0-9]-[01][0-9]-[0-3][0-9]/ { if (s != "") exit
+      n++; d = substr($0, 4, 10); tp = $0; sub(/^## [^ ]+ *(— *)?/, "", tp); sd = ""; en = ""; f = 0
+      if (n == 1) { d1 = d; tp1 = tp }
+      next }
+    !n { next }
+    /^Stopped at: *next week.s focus:/ { f = 0; next }   # older copies logged the Sunday focus here
+    /^Stopped at:/ { f = 1; sub(/^Stopped at: */, ""); s = $0; next }
+    /^Energy:/ { en = $0; sub(/^Energy: */, "", en); f = 0; next }
+    /^Their words:/ { sd = $0; sub(/^Their words: */, "", sd); f = 0; next }
+    /^[ \t]*$/ { f = 0; next }
+    f { s = s " " $0; next }
     n == 1 && !/^(Working on|Done|Next):/ && !/^- / { other[++oc] = $0 }
     END { if (!n) { print "stopped: none yet (no dated entry in current.md)"; exit }
-          if (s != "") print "  at: " s; else for (i = 1; i <= oc && i <= 3; i++) print "  " other[i]
+          if (s == "") { printf "stopped: %s \"%s\" (%s)\n", d1, tp1, when(d1); for (i = 1; i <= oc && i <= 3; i++) print "  " other[i]; exit }
+          printf "stopped: %s \"%s\" (%s)\n", d, tp, when(d); print "  at: " s
           if (sd != "") print "  said: " sd
           if (en != "") print "  energy: " en }
   ' current.md
@@ -791,6 +905,11 @@ cmd_status() {
     echo "  run the life-architect skill, quick start (3 questions)"
     return 0
   fi
+  last="$(cat .life/last-start 2>/dev/null || true)"
+  case "$last" in 20[0-9][0-9]-[01][0-9]-[0-3][0-9])
+    gap="$(T="$TODAY" A="$last" awk "$DAYFN"' BEGIN { print day(ENVIRON["T"]) - day(ENVIRON["A"]) }')"
+    [ "$gap" -lt 7 ] || echo "back: first session in $gap days. Welcome them back warmly, no recap of what slipped, no replanning: today's line or n1, then ONE small step" ;;
+  esac
   stopped_info
   week_info
   if grep -q '^# Queue' queue.md 2>/dev/null; then
@@ -807,7 +926,7 @@ cmd_status() {
   else echo "review: not due (last $rd days ago)"; fi
   pending_hint
   exp_due | sed 's/^/experiment due (verdict at the Sunday meeting): /'
-  [ -f "$AUTOSAVE_BLOCKED" ] && echo "autosave: paused, $(cat "$AUTOSAVE_BLOCKED")"
+  [ -f "$AUTOSAVE_BLOCKED" ] && echo "autosave: paused, $(cat "$AUTOSAVE_BLOCKED") (tell them in one line; nothing is lost, the files are fine)"
   lr="$(learn_due)"; [ -z "$lr" ] || echo "learn: $(printf '%s' "$lr" | cut -f1) \"$(printf '%s' "$lr" | cut -f2)\" (end of session only: ./life learn)"
   rp="$(ritual_pick)"; echo "ritual: $(printf '%s' "$rp" | cut -f1) ($(printf '%s' "$rp" | cut -f2))"
   echo "next:"
@@ -945,7 +1064,7 @@ cmd_review() { # the weekly review packet, one read
     ($1 == "i" || $1 == "w") && match($4, /20[0-9][0-9]-[01][0-9]-[0-3][0-9]/) {
       a = day(ENVIRON["T"]) - day(substr($4, RSTART, 10))
       if (($1 == "i" && a >= 21) || ($1 == "w" && a >= 14)) printf "  %s%d %d days: %s\n", $1, $2, a, $4 }')"
-  [ -z "$st" ] || { echo "stale (offer: do, renegotiate, Someday, or drop; never a reproach):"; printf '%s\n' "$st"; }
+  [ -z "$st" ] || { echo "been_a_while (offer: do, renegotiate, Someday, or drop):"; printf '%s\n' "$st"; }
   q_list d
   echo "log_this_week:"
   T="$TODAY" awk "$DAYFN"'
@@ -965,7 +1084,12 @@ cmd_review() { # the weekly review packet, one read
     echo "  $(basename "$(dirname "$f")"): ${focus:-(no focus written)}"
   done
   [ "$found" = 1 ] || echo "  none yet"
-  echo "therapy_notes_this_week: $(therapy_count) (say the number only, and only if others don't see their screen)"
+  echo "therapy_notes_this_week: $(therapy_count)"
+  if ! is_template; then
+    lu="$(cat .life/last-update 2>/dev/null || true)"; case "$lu" in ''|*[!0-9]*) lu=0 ;; esac
+    [ $(( $(date +%s) - lu )) -lt 2592000 ] || echo "update: not checked this month (offer ./life update; it shows what's new before changing anything)"
+    git remote get-url origin >/dev/null 2>&1 && echo "backup: offer ./life backup at the end (their private GitHub copy; also brings in phone.md)"
+  fi
   echo "next:"
   echo "  follow the Sunday meeting ritual (.claude/rituals/weekly-review.md); a conversation, not a checklist"
   echo "  finish: ./life week set --outcome \"a\" --day \"Mon: ..\" ... (2-minute version: ./life reviewed --focus \"a\")"
@@ -988,8 +1112,8 @@ cmd_reviewed() { # no flags: stamp only. With --focus/--win: log the review, cle
 $(printf '%s\n' "$QITEMS" | awk -F'\t' '$1 == "d" { print $4 }')
 $(printf '%s' "$wins" | tr '\036' '\n')
 EOF
-  [ -n "$focus" ] && set -- "$@" --stopped "next week's focus: $focus"
-  cmd_log --new --topic "Weekly review" "$@" >/dev/null
+  [ -n "$focus" ] && set -- "$@" --working "next week's focus: $focus"
+  cmd_log --new --topic "Sunday meeting" "$@" >/dev/null
   # Done this week is now kept in that log entry, so its lines leave queue.md.
   tmp="$(mktemp)"
   awk "$QKEYFN"' { raw = $0; sub(/\r$/, "", raw) }
@@ -1073,6 +1197,9 @@ cmd_setup() { # setup --name X --thing "..." --adhd yes|no|trial [--step "first 
   cp .claude/skills/life-architect/to-learn.md .life/to-learn.md
   rm -f .life/SETUP_NEEDED .life/setup-progress.md
   review_stamp
+  if git rev-parse --git-dir >/dev/null 2>&1 && [ -f .github/hooks/pre-push ]; then
+    git config core.hooksPath .github/hooks 2>/dev/null || echo "note: couldn't turn on the push guard here; later, outside the agent: git config core.hooksPath .github/hooks"
+  fi
   echo "ok: set up for $name (adhd: $adhd)"
   cmd_check | sed 's/^/  /'
   echo "next:"
@@ -1138,8 +1265,10 @@ cmd_check() {
   fi
   if git rev-parse --git-dir >/dev/null 2>&1; then
     git check-ignore -q private/x || bad "private/ is not git-ignored" "add 'private/' to .gitignore"
-    if git remote get-url origin >/dev/null 2>&1; then
-      echo "reminder: this repo has a remote ($(git remote get-url origin)). Make sure it is private."
+    [ -f "$AUTOSAVE_BLOCKED" ] && bad "autosave is paused: $(cat "$AUTOSAVE_BLOCKED")" "fix that, and the next reply saves again"
+    if git remote get-url origin >/dev/null 2>&1 && ! is_template; then
+      if repo_public; then bad "$(git remote get-url origin) is PUBLIC, and this copy holds your life" "$PUBLIC_FIX"
+      else echo "reminder: this repo has a remote ($(git remote get-url origin)). Keep it private."; fi
     fi
   fi
   [ "$ok" = 1 ] && echo "check: all good."
@@ -1179,6 +1308,9 @@ case "$CMD" in
   resume) cmd_resume ;;
   nudge) shift; cmd_nudge "$@" ;;
   page) shift; cmd_page "$@" ;;
+  backup) cmd_backup ;;
+  update) shift; cmd_update "$@" ;;
+  prepush) shift; cmd_prepush "$@" ;;
   help|-h|--help)
     cat <<'HELP'
 life: ALFRED's notebook tool. Files are the truth; these commands read and edit them safely.
@@ -1230,6 +1362,8 @@ upkeep
   ./life check                    structure problems, each with its fix
   ./life guard                    template repo only: refuse a commit carrying personal data (pre-commit hook: git config core.hooksPath .github/hooks)
   ./life nudge on HH:MM [private] | off | test    daily desktop nudge, only on days ALFRED wasn't opened
+  ./life backup                   on their yes: pull, move phone.md lines to Inbox, push to their PRIVATE GitHub copy (refuses a public one)
+  ./life update [--apply]         what changed in the template; --apply copies the code in, never their data (on their yes)
   ./life page [on|off]            today in the browser: Now (tick done), jot to Inbox, where they stopped; on = at every session start
                                   from an agent sandbox the server stops with the command: have them type ! ./life page
 HELP

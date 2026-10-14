@@ -210,12 +210,12 @@ left="$(find "$T/home" -type f)"
 fresh setup
 lacks "no to-learn, no line" "$(./life status)" "Getting to know you"
 cp .claude/skills/life-architect/to-learn.md .life/to-learn.md
-has "first topic due" "$(./life status)" 'learn: t1 "Energy:'
-has "learn names privacy-safe place" "$(./life learn)" 'write: context.md "How my brain works"' 
+has "first topic due is the nudge (it keeps them coming back)" "$(./life status)" 'learn: t1 "Nudge:'
+has "learn names where the answer goes" "$(./life learn)" 'write: on a yes: ./life nudge on HH:MM' 
 sed -i.bak "s/^Last asked: .*/Last asked: $TODAY/" .life/to-learn.md
 lacks "asked today, quiet" "$(./life status)" "Getting to know you"
-sed -i.bak -e "s/^Last asked: .*/Last asked: $(days_ago 1)/" -e 's/^- \[ \] Energy/- [x] Energy/' .life/to-learn.md
-has "next topic after a tick" "$(./life status)" 'learn: t2 "Day shape' 
+sed -i.bak -e "s/^Last asked: .*/Last asked: $(days_ago 1)/" -e 's/^- \[ \] Nudge/- [x] Nudge/' .life/to-learn.md
+has "next topic after a tick" "$(./life status)" 'learn: t2 "Energy' 
 sed -i.bak 's/^- \[ \] /- [x] /' .life/to-learn.md
 lacks "all learned, quiet" "$(./life status)" "Getting to know you"
 
@@ -346,7 +346,8 @@ out="$(./life reviewed --focus "retry PR" --focus "passport" --win "a heavy week
 has "reviewed ok" "$out" "Done this week cleared"
 has "reviewed empties Done" "$(./life queue done)" "done_this_week[0]: none"
 e="$(awk '/^## 20/{n++} n==1' current.md)"
-has "reviewed logs the review" "$e" "## $TODAY — Weekly review"
+has "reviewed logs the review" "$e" "## $TODAY — Sunday meeting"
+lacks "the focus is not a stopped-at point" "$e" "Stopped at: next week"
 has "reviewed keeps the wins" "$e" "- Badminton Saturday"
 has "reviewed adds wins" "$e" "- a heavy week, handled"
 has "reviewed logs focus" "$e" "next week's focus: retry PR; passport"
@@ -357,7 +358,7 @@ has "reviewed plain stamps only" "$(./life reviewed)" "stamped"
 fresh setup
 cp .claude/skills/life-architect/to-learn.md .life/to-learn.md
 out="$(./life learn)"
-has "learn prints topic notes" "$out" "Offer a pick: mornings"
+has "learn prints topic notes" "$out" "changes their"
 lacks "learn prints only that topic" "$out" "Tele-MANAS"
 
 # --- check lints with fixes
@@ -556,6 +557,62 @@ fi
 touch .life/autosave-off; ./life gate </dev/null >/dev/null
 [ "$(commits)" = $((n + 1)) ] && ok || bad "autosave-off stops it"
 [ -x "$REPO/.github/hooks/pre-commit" ] && ok || bad "pre-commit hook is executable"
+[ -x "$REPO/.github/hooks/pre-push" ] && ok || bad "pre-push hook is executable"
+
+# --- autosave without a git identity on this machine still saves
+fresh setup; cp "$REPO/.gitignore" .; gitinit; git add -A && git commit -qm init
+git config --unset user.email; git config --unset user.name
+./life add "no identity here" >/dev/null
+GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ./life gate </dev/null >/dev/null
+has "autosave commits without a git identity" "$(git show HEAD:queue.md)" "no identity here"
+lacks "and nothing is paused" "$(./life status)" "autosave: paused"
+echo "git commit failed: something" > .life/autosave-blocked
+out="$(./life check)"; has "check reports a paused autosave" "$out" "problem: autosave is paused"
+
+# --- a personal copy never goes to a public repo
+git remote add origin git@github.com:kavya/alfred.git
+has "check flags a public remote" "$(LIFE_VISIBILITY=public ./life check)" "is PUBLIC, and this copy holds your life"
+lacks "a private one is a reminder only" "$(LIFE_VISIBILITY=private ./life check)" "problem: git@github"
+out="$(LIFE_VISIBILITY=public ./life prepush origin 2>&1)"; rc=$?
+[ $rc = 1 ] && ok || bad "pre-push refuses a public repo (exit $rc)" "$out"
+has "and says how to fix it" "$out" "Change visibility"
+LIFE_VISIBILITY=private ./life prepush origin && ok || bad "pre-push lets a private repo through"
+out="$(LIFE_VISIBILITY=public ./life backup 2>&1)"; rc=$?
+[ $rc = 2 ] && ok || bad "backup refuses a public repo (exit $rc)" "$out"
+
+# --- backup: pull, phone.md into the Inbox, push (a local bare repo stands in for GitHub)
+rm -f .life/autosave-blocked
+B="$(mktemp -d)"; git init -q --bare "$B/r.git"; git remote set-url origin "$B/r.git"
+git push -q origin HEAD 2>/dev/null
+P="$(mktemp -d)"; git clone -q "$B/r.git" "$P/c" 2>/dev/null
+( cd "$P/c" && printf '# Phone\n\n- call the plumber\n- buy a SIM for Appa\n' > phone.md \
+  && git add phone.md && git -c user.email=p@x -c user.name=p commit -qm phone && git push -q origin HEAD 2>/dev/null )
+out="$(LIFE_VISIBILITY=private ./life backup 2>&1)"
+has "backup pushes" "$out" "ok: backed up to"
+has "backup brings in phone lines" "$out" "2 line(s) from phone.md are now in the Inbox"
+has "phone lines land in the Inbox" "$(./life queue inbox)" "buy a SIM for Appa"
+lacks "phone.md is emptied" "$(cat phone.md)" "call the plumber"
+has "the GitHub copy has the Inbox" "$(git -C "$B/r.git" show HEAD:queue.md)" "call the plumber"
+
+# --- update: the template's code in, their data untouched
+U="$(mktemp -d)"; cp -R "$REPO/life" "$REPO/AGENTS.md" "$REPO/CLAUDE.md" "$REPO/.claude" "$U/" 2>/dev/null
+mkdir -p "$U/.life"; printf 'template week\n' > "$U/week.md"
+( cd "$U" && echo "# a new rule" >> .claude/rituals/eod.md && echo "Contract line from upstream." >> AGENTS.md \
+  && git init -q . && git add -A && git -c user.email=t@x -c user.name=t commit -qm t )
+cp current.md current.before; rm -f week.md
+out="$(LIFE_TEMPLATE_URL="$U" ./life update)"
+has "update lists what changed" "$out" ".claude/rituals/eod.md"
+has "update offers a missing data file" "$out" "week.md(new)"
+lacks "update changes nothing without --apply (eod)" "$(cat .claude/rituals/eod.md)" "a new rule"
+out="$(LIFE_TEMPLATE_URL="$U" ./life update --apply)"
+has "update applies" "$out" "ok: updated"
+has "update brought the ritual" "$(cat .claude/rituals/eod.md)" "a new rule"
+has "update brought the contract" "$(cat AGENTS.md)" "Contract line from upstream."
+has "update kept About the person" "$(cat AGENTS.md)" "Kavya"
+cmp -s current.md current.before && ok || bad "update never touches their log"
+has "a missing data file is added" "$(cat week.md)" "template week"
+has "a second update is up to date" "$(LIFE_TEMPLATE_URL="$U" ./life update)" "ok: up to date"
+cd "$REPO" && rm -rf "$B" "$P" "$U"
 
 # --- the week: Sunday decides, weekdays confirm
 fresh setup
@@ -602,6 +659,10 @@ has "status still shows the meeting is owed" "$(./life status)" "pending: review
 printf 'Agreed: %s at the Sunday meeting.\n' "$(days_ago 9)" > a.tmp
 awk -v l="$(cat a.tmp)" '/^Agreed:/{print l; next} {print}' week.md > w.tmp && mv w.tmp week.md
 has "an old week stays in force" "$(./life status)" "(9 days ago), still in force"
+awk -v l="Agreed: $(days_ago 20) at the Sunday meeting." '/^Agreed:/{print l; next} {print}' week.md > w.tmp && mv w.tmp week.md
+out="$(LIFE_DOW=1 ./life status)"
+has "a week this old doesn't steer today" "$out" "too old to steer today"
+lacks "and its day line isn't served as today" "$out" "today: Mon"
 echo $(( $(date +%s) - 2 * 86400 )) > .life/last-weekly-review
 has "a Sunday two days after setup says the meeting is today" "$(LIFE_DOW=7 ./life status)" "review: Sunday, so the weekly meeting is today"
 lacks "a weekday two days after setup does not" "$(LIFE_DOW=5 ./life status)" "weekly meeting is today"
@@ -611,13 +672,20 @@ has "Sunday picks the meeting" "$(LIFE_DOW=7 ./life ritual)" "ritual: review (Su
 lacks "after the meeting, Sunday is a normal day" "$(LIFE_DOW=7 ./life ritual)" "ritual: review"
 lacks "after the meeting, status stops calling it" "$(LIFE_DOW=7 ./life status)" "weekly meeting is today"
 
+# --- back after a gap: the start says so, once
+fresh setup
+days_ago 9 > .life/last-start
+has "status welcomes them back" "$(./life status)" "back: first session in 9 days"
+./life start >/dev/null
+lacks "only on the first session back" "$(./life status)" "back: first session"
+
 # --- resume: back after a gap
 fresh setup
 ./life week set --outcome "Ship the deck" --day "Mon: cafe, deck first" >/dev/null
 out="$(LIFE_DOW=1 ./life resume)"
 has "resume shows today" "$out" "today: Mon: cafe, deck first"
 has "resume shows Now" "$out" "n1 Retry tests from case 3"
-has "resume shows where they stopped" "$out" "stopped: $TODAY"
+has "after the meeting, resume still shows where they stopped" "$out" "test case 3 of 5"
 has "resume says no replanning" "$out" "no replanning"
 fresh
 out="$(./life resume 2>&1)"; rc=$?; [ $rc = 2 ] && ok || bad "resume before setup" "$out"

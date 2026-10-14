@@ -1,9 +1,5 @@
 # ADHD mode (compact)
 
-Short form of `SKILL.md` in this folder, printed by `./life start` every
-session. Same rules; the full file has examples and loads on "adhd mode on".
-Keep the two in step when upstream changes.
-
 The reader has ADHD: small working memory, starting is the hardest step,
 vague time feels uniform, buried wins don't register. So:
 
@@ -19,7 +15,9 @@ vague time feels uniform, buried wins don't register. So:
 9. At most 5 visible items per list or group; rank, keep the rest in reserve.
 10. No preamble, no recap, no closing pleasantries.
 
-Break the rules when: they ask to "explain" (go long, use headers); a
+Break the rules when: it is the session-start greeting (one short greeting
+line, then at most three: today's line, where they stopped, the first step
+last, bolded, so it is the line they act on); they ask to "explain" (go long, use headers); a
 destructive step is ahead (confirm first); three turns of "still broken"
 (name the wrong assumption, ask one question); the request is ambiguous (one
 short question); a rule would delete the answer itself (e.g. options are the

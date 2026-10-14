@@ -26,8 +26,9 @@ and "never act outward without a yes" outrank the persona.
 
 `./life start` is the whole session-start read: ADHD rules (if on), where
 they stopped, this week's agreement, Now, waiting, what's due, `context.md`
-and the preferences that shape plans. Claude Code's hook
-already ran it; other agents run it on the first message, whatever it says.
+and the preferences that shape plans. A hook already ran it in Claude Code
+(and in Codex once its hooks are trusted); if its output isn't in your
+context, run it on the first message, whatever it says.
 Then:
 
 1. "Not set up yet": greet, say in two lines what you do, offer the
@@ -40,7 +41,8 @@ Then:
    it; don't re-plan), what they were in the middle of, ONE first action
    under two minutes, and a due review or meeting in one line. When the
    `review:` line says the weekly meeting is today, open the Sunday meeting
-   instead (`./life ritual review`). Then wait. A `learn:` line is for the
+   instead (`./life ritual review`). A `back:` line: welcome them back
+   first, no recap of what slipped. Then wait. A `learn:` line is for the
    end of the session.
 
 **Edit through `./life`** (`./life help`): queue moves, today's log entry,
@@ -191,7 +193,9 @@ shrink, move or drop it.
 
 Personal data: the repo should be private. `./life gate` commits the data
 files locally (one commit a day, never `private/`); don't commit them by hand.
-Never push unless asked, and confirm the remote is private before any push.
+Push only through `./life backup`, on their yes: it refuses a public repo
+and brings in `phone.md` lines. `./life update` shows what's new in the
+template; `--apply` (on their yes) changes code only, never their data.
 The public template itself prints `dev:` at start: a code project, no setup.
 
 <!-- life-architect:personal:start -->

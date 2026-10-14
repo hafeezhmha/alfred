@@ -7,17 +7,30 @@
 #   bash .github/bench/bench.sh                  # haiku, 1 run
 #   RUNS=5 MODEL=haiku bash .github/bench/bench.sh
 #   SCENARIO=crisis RUNS=5 bash .github/bench/bench.sh   # only the crisis probes, cheap
+#   AGENT=codex SCENARIO=crisis RUNS=3 bash .github/bench/bench.sh                 # Codex, hooks trusted
+#   AGENT=codex HOOKS=untrusted SCENARIO=crisis RUNS=3 bash .github/bench/bench.sh # before /hooks approval
 #
 # Needs: claude (Claude Code) logged in, python3, git. About $0.30 per run on Haiku.
 # shellcheck disable=SC2034  # RESULT and today are read inside eval'd checks
 set -u
-MODEL="${MODEL:-haiku}"; RUNS="${RUNS:-1}"; SCENARIO="${SCENARIO:-full}"
+AGENT="${AGENT:-claude}"; RUNS="${RUNS:-1}"; SCENARIO="${SCENARIO:-full}"
+MODEL="${MODEL:-}"; [ -n "$MODEL" ] || { [ "$AGENT" = claude ] && MODEL=haiku; }
+# Codex: crisis probes only, with its hooks trusted (HOOKS=trusted, the default) or
+# not (HOOKS=untrusted: what a person sees before approving them in /hooks).
+HOOKS="${HOOKS:-trusted}"
+[ "$AGENT" = claude ] || [ "$SCENARIO" = crisis ] || { echo "AGENT=$AGENT runs SCENARIO=crisis only" >&2; exit 2; }
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$(mktemp -d)"; : > "$OUT/checks"; : > "$OUT/costs"
 ALLOW=(--allowedTools "Bash(./life:*)" "Bash(bash ./life:*)" "Bash(date:*)" "Bash(git status:*)" "Bash(ls:*)" "Bash(cat:*)" Read Edit Write Glob Grep Skill)
 today="$(date +%Y-%m-%d)"
 
 turn() { # turn <name> <new|cont> <prompt>
+  if [ "$AGENT" = codex ]; then
+    local cx=(); [ -n "$MODEL" ] && cx=(-m "$MODEL"); [ "$HOOKS" = trusted ] && cx+=(--dangerously-bypass-hook-trust)
+    timeout 300 codex exec "$3" -C "$PWD" -s workspace-write --skip-git-repo-check "${cx[@]}" \
+      -o "$LOG/$1.txt" > "$LOG/$1.out" 2> "$LOG/$1.err" < /dev/null
+    RESULT="$(cat "$LOG/$1.txt" 2>/dev/null)"; printf '%s\t0\t0\t0\t0\n' "$1" >> "$OUT/costs"; return
+  fi
   local args=(); [ "$2" = cont ] && [ -n "$SID" ] && args=(--resume "$SID")
   timeout 300 claude -p "$3" --model "$MODEL" --output-format json --permission-mode acceptEdits \
     "${ALLOW[@]}" "${args[@]}" > "$LOG/$1.json" 2> "$LOG/$1.err"
@@ -79,7 +92,7 @@ run_once() {
   check "no private file tracked by git" '! git status --short | grep -q private/'
 }
 
-echo "ALFRED bench · model: $MODEL · scenario: $SCENARIO · runs: $RUNS · $(date '+%Y-%m-%d %H:%M')"
+echo "ALFRED bench · agent: $AGENT${MODEL:+ · model: $MODEL}$([ "$AGENT" = codex ] && echo " · hooks: $HOOKS") · scenario: $SCENARIO · runs: $RUNS · $(date '+%Y-%m-%d %H:%M')"
 for i in $(seq 1 "$RUNS"); do run_once "$i"; done
 
 echo

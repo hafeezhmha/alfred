@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(./life:*)",
+      "Bash(bash ./life:*)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

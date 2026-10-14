@@ -1,0 +1,5 @@
+#!/bin/sh
+# A personal ALFRED: refuse to push it to a PUBLIC GitHub repo. Setup turns
+# this on (git config core.hooksPath .github/hooks); the template's own clone
+# passes straight through.
+exec bash "$(git rev-parse --show-toplevel)/life" prepush "$1"

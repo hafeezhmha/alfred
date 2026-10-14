@@ -10,6 +10,9 @@ forget, and start again.**
 
 He keeps the commitments, the context and the plan. You do the living.
 
+<sub>He lives in a terminal AI agent, so he fits developers and anyone at home
+in a terminal best.</sub>
+
 [![tests](https://github.com/hafeezhmha/alfred/actions/workflows/test.yml/badge.svg)](https://github.com/hafeezhmha/alfred/actions/workflows/test.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 [![works with Claude Code, OpenCode, Codex](https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20OpenCode%20%C2%B7%20Codex-5a67d8)](#start-here-about-3-minutes)
@@ -27,7 +30,8 @@ He keeps the commitments, the context and the plan. You do the living.
 
 > [!TIP]
 > **Short on time or focus? Read only this box.**
-> Make a private copy, type `alfred`, say hello. Three questions, about three
+> Make a private copy, clone it to `~/alfred`, paste the one line in step 2
+> below, then type `alfred` and say hello. Three questions, about three
 > minutes, and he's working. Every Sunday, a short meeting decides the week;
 > every weekday opens with what you agreed and one small first step.
 
@@ -47,6 +51,11 @@ Maybe, if any of these sound familiar:
 ALFRED was built with ADHD, autistic and otherwise neurodivergent brains in
 mind from the first line. It works for everyone else too; they just get fewer
 of the jokes.
+
+**An honest fit check.** ALFRED runs inside an AI coding agent in a
+terminal. If you write code, or pasting a command doesn't scare you, he
+fits. If a terminal sounds awful, a phone app built for ADHD (Tiimo, Goblin
+Tools, Lunatask) will serve you better today, and that's a fine choice.
 
 ## Start here (about 3 minutes)
 
@@ -84,8 +93,15 @@ call to `./life start`, so nothing gets loaded twice. Change the front door:
 - **Codex:** `alfred() { cd ~/alfred && codex "${*:-Hello, Alfred.}"; }`.
   Codex has no `/` shortcuts here; plain words do everything.
 
-The one difference: neither has a start-of-session hook, so ALFRED reads
-your notes after your first message instead of before it.
+What differs:
+
+- **Codex** runs ALFRED's hooks (reading his notes at start, the crisis
+  safety net, the end-of-reply save) once you trust them: type `/hooks`
+  in Codex the first time and approve ALFRED's three.
+- **OpenCode** has no hooks. ALFRED reads his notes after your first
+  message, and the crisis safety net and the save rely on the model
+  following the written rules. A small model missed a written rule 1 time
+  in 5 in our tests, so pick a strong model for OpenCode.
 
 </details>
 
@@ -95,16 +111,21 @@ your notes after your first message instead of before it.
 <br>
 
 - [Claude Code](https://claude.com/claude-code), [OpenCode](https://opencode.ai)
-  or Codex, with a model account.
+  or Codex, with a model account. **What it costs:** ALFRED is free; the
+  model isn't. Claude Code needs a Claude Pro plan (about $17-20 a month);
+  Codex works on ChatGPT's Free and Go plans (Go is ₹399 a month in India).
 - macOS or Linux, same steps on both. On a new Mac, `git` asks to install the
   Command Line Tools the first time; say yes. On Windows, use WSL.
-- Git, and a GitHub account to hold your private copy.
+- Git, and a GitHub account to hold your private copy. Cloning a private
+  repo needs you signed in on this computer; the easiest way is the
+  [GitHub CLI](https://cli.github.com): `gh auth login`, then
+  `gh repo clone <you>/<your-copy> ~/alfred`.
 
 </details>
 
 ## A week with ALFRED
 
-**Sunday: the meeting.** About 30 minutes, 10 on a rough week. ALFRED brings
+**Sunday: the meeting.** About 30 to 45 minutes, 10 on a rough week. ALFRED brings
 the agenda: what you agreed last week, what moved, what slipped, what's
 waiting, and whatever you put on the list mid-week. He asks what's changed,
 takes your brain dump, and helps you settle at most three outcomes and a
@@ -118,7 +139,7 @@ names the likely snags, and you agree what to do if they happen.
 >
 > **First step (2 min):** open `fixtures/merchants.json` and copy the second merchant ID.
 
-No dashboard. No streak. No red numbers. No planning meeting every morning.
+No dashboard to keep up. No streak. No red numbers. No planning meeting every morning.
 Lost the thread at 3 pm? "I'm lost" brings back the plan and one next action.
 A new thought? "For Sunday: should I drop the course?" waits for the meeting
 instead of eating your afternoon.
@@ -159,8 +180,9 @@ single desktop notification each day:
 
 It only shows up on days you haven't opened ALFRED yet. No counts, no "you
 missed", no second ping. Add `private` to keep your task off the lock screen,
-and `./life nudge off` stops it. Setup offers it too, so you may never need to
-type this. For the Sunday meeting, a repeating reminder in the app you already
+and `./life nudge off` stops it. He offers it at the end of your first real
+session, so you may never need to type this. (On WSL there's no scheduler to
+set; he'll say so.) For the Sunday meeting, a repeating reminder in the app you already
 trust (calendar, task app) works best, even with the laptop shut.
 
 ### A page on the desk
@@ -181,6 +203,22 @@ edits. A tick waits five seconds, so a stray click can be taken back. When
 ALFRED changes the files in the chat, the page follows. Off by default,
 because a screen your family can see is a screen your plans are on.
 
+### From your phone, and a backup
+
+Your life doesn't wait by the laptop. Open `phone.md` in your private copy
+in the GitHub app, add a line starting with `- `, and commit. At the next
+backup ("back up", or the Sunday meeting offers it), ALFRED moves each line
+into your Inbox and pushes everything to your private GitHub copy, so a dead
+laptop loses nothing. He refuses to push to a public repo, and so does
+git itself once setup has turned on the guard.
+
+### Getting fixes
+
+Your copy is yours, so it doesn't change by itself. Once a month the Sunday
+meeting offers `./life update`: it shows what's new in the template, and
+on your yes copies the new code in. Your files (`context.md`, `queue.md`,
+the log, your About section) are never touched.
+
 ## Promises ALFRED keeps
 
 | Promise | What that means in practice |
@@ -192,7 +230,7 @@ because a screen your family can see is a screen your plans are on.
 | **Small beats complete** | At most 3 things in Now, 3 outcomes a week. On a low-energy day, 1 thing is a full day. |
 | **Energy before time** | Hard things go where your brain is actually sharp. |
 | **Learns you, carefully** | What you said, what he's seen at least three times, what you're trying. One bad day never rewrites the picture. |
-| **Your tools keep their jobs** | Your task app, notes and calendar stay where they are; ALFRED learns which does what and works alongside them. (Connectors are being built, read-only first.) |
+| **Your tools keep their jobs** | Your task app, notes and calendar stay where they are; ALFRED learns which does what and works alongside them, through you (no connectors yet). |
 | **Skills, not therapy** | When feelings run the show: small, well-researched skills (DBT, ACT, self-compassion), in the present. Your therapist's plan comes first. Talk in parts ("a part of me doesn't want to") if you like, the IFS way. |
 | **Your call, always** | He suggests with options; you decide. He never sends, books, buys or deletes anything without your yes, each time. |
 | **It's yours** | Plain markdown in a private git repo, saved locally as you go. Switch agents or stop using it; your history stays readable forever. |
@@ -211,6 +249,7 @@ because a screen your family can see is a screen your plans are on.
 | `queue.md` | Open loops: Now (max 3), Next, Waiting on, Inbox, Someday, Done this week. |
 | `week.md` | What the Sunday meeting agreed: outcomes, a line per day, likely snags, the list for next Sunday. |
 | `preferences.md` | How you work, by evidence: what you said, what he's seen, what you're trying, what you dropped. |
+| `phone.md` | Notes you add from your phone (GitHub app); the next backup moves them into the Inbox. |
 | `areas/` | One folder per life area (health, money, work...) with its goals and decisions. |
 | `archive/` | Old plans and old log entries. Kept, never nagged about. |
 | `private/` | Git-ignored. For anything you'd never want on a server. |
@@ -223,7 +262,7 @@ because a screen your family can see is a screen your plans are on.
 </details>
 
 <details>
-<summary><b>The <code>./life</code> tool</b> (ALFRED runs it; you never need to)</summary>
+<summary><b>The <code>./life</code> tool</b> (ALFRED runs it; you only type it for things on your own computer)</summary>
 
 <br>
 
@@ -245,6 +284,8 @@ edit by hand.
 ./life review          the Sunday agenda on one screen (then ./life week set)
 ./life nudge on 09:30  a daily desktop nudge
 ./life page            today in your browser: tick done, jot to Inbox
+./life backup          phone.md in, everything up to your private GitHub copy
+./life update          what's new in the template (--apply copies it in)
 ./life help            everything else
 ```
 
@@ -315,7 +356,7 @@ SCENARIO=crisis RUNS=5 bash .github/bench/bench.sh  # just the crisis probes
 | Wrap-up: energy logged with its cause | 4/5 |
 
 Per run: about 19 agent turns, 510k input tokens (almost all cached: the
-agent's own system prompt, plus `AGENTS.md` at 8.5 KB), 1.7k output tokens,
+agent's own system prompt, plus `AGENTS.md`, then 8.5 KB, now about 11 KB), 1.7k output tokens,
 **$0.32**.
 
 **Their exact words: 3/5 to 5/5.** Asking the model to pass them along
@@ -375,7 +416,7 @@ then (Haiku 4.5, four phrasings, 5 runs each):
   ([arXiv 2310.01798](https://arxiv.org/abs/2310.01798)), and pass rates
   over several runs, not one ([τ-bench, arXiv 2406.12045](https://arxiv.org/abs/2406.12045)).
 
-Tests: 310 launcher checks run on Linux and macOS in CI, plus shellcheck.
+Tests: 361 launcher checks run on Linux and macOS in CI, plus shellcheck.
 
 </details>
 
@@ -386,9 +427,15 @@ Tests: 310 launcher checks run on Linux and macOS in CI, plus shellcheck.
 ### Privacy
 
 Your copy will hold health, money and relationship details. **Keep the repo
-private.** Put anything you'd never want on a server in `private/`; git
+private.** `./life check` flags a public one, and the backup refuses to
+push there. Put anything you'd never want on GitHub in `private/`; git
 ignores that folder. During setup you can skip any question, and sensitive
 details are only written down if you agree.
+
+**What your model provider sees.** To answer you, the agent sends what it
+reads to your model provider (Anthropic or OpenAI), including
+`private/support.md` when you use `/stuck`. If you'd rather they don't
+train on it, turn that off in your account's privacy settings.
 
 ### Sharing with friends
 
@@ -405,6 +452,12 @@ substitute for a doctor, therapist or coach.
 > **India:** Tele-MANAS, call **14416** (free, 24/7, in English and 20 Indian
 > languages). Emergency: **112**.
 > **Elsewhere:** local emergency services, or US **988**, UK Samaritans **116 123**.
+
+### Tell me how it went
+
+Did setup work? Did you stop using it, and when? Both answers help more than
+a star. [Open a short note](https://github.com/hafeezhmha/alfred/issues/new?template=how-it-went.md);
+never paste anything from your own copy.
 
 ### Changing the template
 

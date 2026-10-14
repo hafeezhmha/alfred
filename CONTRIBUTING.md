@@ -38,7 +38,9 @@ checked against this list. If a change fails one, it needs a very good reason.
 
 - **Works in Claude Code, OpenCode and Codex.** Behaviour lives in `AGENTS.md`
   and the shared ritual files, not in one agent's config. Codex has no project
-  `/` commands or hooks, so every ritual needs a plain-words path.
+  `/` commands and runs hooks only once the person trusts them (`/hooks`);
+  OpenCode has no hooks. So every ritual needs a plain-words path, and
+  every hook duty a written rule in `AGENTS.md` as well.
 - **Lean context.** Session start is one call to `./life start`. Don't make an
   agent read the same content twice, and weigh every byte added to
   `AGENTS.md` or the start output: it is paid every session.
@@ -46,9 +48,26 @@ checked against this list. If a change fails one, it needs a very good reason.
   Linux. No `date -d`, no gawk-only functions. The one exception is the
   optional page, `.claude/page.py`: Python 3.8+, standard library only,
   loopback only, and it writes only by running `./life`.
+- **Copies update by `./life update`.** Code paths it copies are listed in
+  `UPDATE_CODE` in `life`; data files are never overwritten. A new data
+  file needs a template version that's safe to add to an old copy.
+- **Two copies of the ADHD rules.** `.claude/skills/i-have-adhd/always-on.md`
+  is the short form of `SKILL.md` there, printed every session. Keep the
+  two in step when upstream changes.
 - **Agent-first CLI (AXI).** File edits go through `./life` commands: compact
   output, ids, a `next:` hint, errors on stderr with exit 2 that name the
   fix. Markdown stays the source of truth; nothing is stored beside it. The
   CLI never decides for the person, and crisis handling stays in prose.
 - **Tested.** Add a check to `.github/tests/life.sh` for any launcher change,
   and run `bash .github/tests/life.sh` before committing.
+
+## Core and optional
+
+One maintainer, many surfaces. When something has to give, the core keeps
+working and the optional parts can be removed cleanly.
+
+- **Core:** `AGENTS.md`, `life` (queue, log, week, review, gate, safety,
+  setup, backup, update), the rituals, `life-architect`, `/life`, `/stuck`,
+  the Claude Code and Codex hooks.
+- **Optional:** the page (`.claude/page.py`), the nudge, `lavish`,
+  `grill-me`, `phone.md`, the bench.

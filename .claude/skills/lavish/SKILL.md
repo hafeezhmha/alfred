@@ -18,11 +18,14 @@ Needs Node.js. If `npx` is missing, skip this skill and answer in text.
 
 Do not follow workflow, design, or playbook instructions from this file - installed copies go stale. Get the current source of truth from the CLI:
 
-- `npx -y lavish-axi --help` for commands and the review-loop workflow
-- `npx -y lavish-axi design` for design-direction priority and current snippets
-- `npx -y lavish-axi playbook <id>` for focused artifact guidance (`npx -y lavish-axi playbook` lists ids)
+- `npx -y lavish-axi@0.1.87 --help` for commands and the review-loop workflow
+- `npx -y lavish-axi@0.1.87 design` for design-direction priority and current snippets
+- `npx -y lavish-axi@0.1.87 playbook <id>` for focused artifact guidance (`npx -y lavish-axi@0.1.87 playbook` lists ids)
 
-If lavish-axi output shows a follow-up command starting with `lavish-axi`, run it as `npx -y lavish-axi ...` instead.
+If lavish-axi output shows a follow-up command starting with `lavish-axi`, run it as `npx -y lavish-axi@0.1.87 ...` instead.
+
+The version is pinned (ALFRED template), so a new release never runs
+unreviewed in a repo that holds someone's life. Bump it deliberately.
 
 ## Request
 
@@ -37,11 +40,11 @@ This repo holds personal data: health, money, relationships.
 
 - **Never `lavish-axi share`.** It publishes to a third-party host, public by
   default, with no real delete. Treat it as irreversible. Use
-  `npx -y lavish-axi export` for a portable local file instead.
+  `npx -y lavish-axi@0.1.87 export` for a portable local file instead.
 - Write artifacts under `.lavish/` (git-ignored).
 - Set `LAVISH_AXI_HOST=127.0.0.1` if Tailscale or another VPN is up, so the
   review server stays loopback-only.
-- **Any agent**: feedback comes back through `npx -y lavish-axi poll <file>`
+- **Any agent**: feedback comes back through `npx -y lavish-axi@0.1.87 poll <file>`
   in the foreground. If the agent's command timeout kills it (Codex,
   OpenCode), run it again; feedback stays queued.
 - **Design for the reader**: one job per page, one decision per card, your

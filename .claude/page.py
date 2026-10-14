@@ -127,8 +127,9 @@ def card(title, body, cls=""):
     return f'<section class="card {cls}"><h2>{title}</h2>{body}</section>'
 
 
-def fold(title, body, open_=False):
-    return f'<details class="card"{" open" if open_ else ""}><summary>{title}</summary>{body}</details>'
+def fold(title, body):
+    key = re.sub(r"\W+", "-", title.split("(")[0].strip())
+    return f'<details class="card" data-k="{key}"><summary>{title}</summary>{body}</details>'
 
 
 def render():
@@ -149,7 +150,7 @@ def render():
     agreed = re.search(r"^Agreed: (20\d\d-\d\d-\d\d)", week, re.M)
     day = DAYS[now.weekday()]
     line = next((d for d in items(week, "Days") if d.lower().startswith(day.lower())), "") if agreed else ""
-    today = inline(re.sub(r"^\w+:\s*", "", line)) if line else "Nothing agreed for today. Now is the plan."
+    today = inline(re.sub(r"^\w+:\s*", "", line)) if line else "Nothing agreed for today."
 
     s = stopped()
     if s:
@@ -181,7 +182,7 @@ def render():
 
     jot = card("jot it down", '<label class="sr" for="note">Something to remember</label>'
                '<textarea id="note" rows="2" maxlength="300" placeholder="a thought, a task, a call to make..."></textarea>'
-               '<div class="acts"><button type="button" id="add">Put it in the Inbox</button>'
+               '<div class="acts"><button type="button" id="add" class="ghost">Put it in the Inbox</button>'
                '<span>sorted later, with ALFRED</span></div>', "note")
 
     waiting = []
@@ -191,10 +192,10 @@ def render():
         text = w[: m.start()] if m else w
         waiting.append(f'<li>{inline(text)}' + (f' <span class="meta">&middot; waiting {n} days</span>' if n is not None else "") + "</li>")
     waiting_card = fold(f"waiting on ({len(waiting)})", f'<ul class="plain">{"".join(waiting)}</ul>'
-                        '<p class="meta">Not yours to chase until it lands.</p>') if waiting else ""
+                        '<p class="meta">When one has waited a while, ALFRED can suggest a short, friendly nudge.</p>') if waiting else ""
 
     done = items(queue, "Done this week")
-    done_card = fold(f"done this week ({len(done)})", '<ul class="plain wins">' + "".join(f"<li>{inline(d)}</li>" for d in done) + "</ul>", True) if done else ""
+    done_card = fold(f"done this week ({len(done)})", '<ul class="plain wins">' + "".join(f"<li>{inline(d)}</li>" for d in done) + "</ul>") if done else ""
 
     body = (hud + '<div class="cols">'
             f'<div class="col">{now_card}{week_card}</div>'
@@ -253,15 +254,11 @@ main { max-width:1280px; margin:0 auto; padding:32px; }
 .body { padding:16px 32px 8px; }
 .hellorow { display:flex; flex-wrap:wrap; align-items:flex-end; gap:18px; margin-bottom:14px; }
 .butler { width:114px; height:auto; flex:none; }
-.butler .bob { animation:bob 3.2s ease-in-out infinite; }
-.butler .eyes rect { transform-box:fill-box; transform-origin:center; animation:blink 5.5s infinite; }
-.butler .st { animation:steam 2.8s ease-in-out infinite; } .butler .s2 { animation-delay:.9s; } .butler .s3 { animation-delay:1.8s; }
-@keyframes bob { 50% { transform:translateY(-.35px); } }
+.butler .eyes rect { transform-box:fill-box; transform-origin:center; animation:blink 5.5s 2; }
+.butler .st { opacity:0; animation:steam 2.8s ease-in-out 3; } .butler .s2 { animation-delay:.9s; } .butler .s3 { animation-delay:1.8s; }
 @keyframes blink { 0%,94%,100% { transform:scaleY(1); } 97% { transform:scaleY(.1); } }
 @keyframes steam { 0%,100% { opacity:0; transform:translateY(1px); } 50% { opacity:.9; transform:translateY(-1px); } }
 .hello { margin:0 0 6px; color:var(--dim); } .hello .who { color:var(--coral); }
-.hello::after { content:"_"; color:var(--coral); animation:cursor 1.1s steps(1) infinite; margin-left:2px; }
-@keyframes cursor { 50% { opacity:0; } }
 .clk { margin-left:auto; text-align:right; } .clk b { display:block; font-size:24px; line-height:1.2; } .clk span { font-size:12px; color:var(--dim); }
 .hud { position:relative; padding:16px 28px; margin-bottom:22px; border:1px solid rgba(215,119,87,.45); border-radius:4px; background:#0d0907; }
 .hud::before, .hud::after { content:""; position:absolute; width:14px; height:14px; border:2px solid var(--coral); }
@@ -284,9 +281,10 @@ ul { list-style:none; margin:0; padding:0; }
 .plain li { padding:3px 0; overflow-wrap:anywhere; } .plain li::before { content:"- "; color:var(--dim); }
 .wins li::before { content:"+ "; color:var(--green); }
 button { font:inherit; font-size:13px; color:var(--bg); background:var(--coral); border:0; border-radius:3px; padding:4px 12px; cursor:pointer; }
-button.done { color:var(--coral); background:none; border:1px solid rgba(215,119,87,.6); }
+button.ghost { color:var(--coral); background:none; border:1px solid #7a6850; }
+.now li.gone button.done { color:var(--coral); background:none; border:1px solid #7a6850; }
 button:focus-visible, textarea:focus-visible, summary:focus-visible { outline:2px solid var(--amber); outline-offset:2px; }
-textarea { width:100%; font:inherit; color:var(--text); background:#000; border:1px solid var(--line); border-radius:4px; padding:8px; resize:vertical; }
+textarea { width:100%; font:inherit; color:var(--text); background:#000; border:1px solid #7a6850; border-radius:4px; padding:8px; resize:vertical; }
 .acts { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:8px; } .acts span { font-size:12px; color:var(--dim); }
 #status { min-height:1.8em; font-size:13px; color:var(--green); margin:6px 0 0; }
 .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
@@ -305,6 +303,18 @@ footer { padding:8px 32px 14px; font-size:12px; color:var(--dim); }
 </div></main>
 <script>
 const sha = document.querySelector('meta[name="alfred-sha"]').content;
+// A reload (the files changed) keeps which folds were open and where the focus was.
+function reload() {
+  const open = [...document.querySelectorAll("details[open]")].map(d => d.dataset.k);
+  sessionStorage.setItem("alfred-open", JSON.stringify(open));
+  if (document.activeElement && document.activeElement.id) sessionStorage.setItem("alfred-focus", document.activeElement.id);
+  location.reload();
+}
+try {
+  (JSON.parse(sessionStorage.getItem("alfred-open") || "[]")).forEach(k => { const d = document.querySelector(`details[data-k="${k}"]`); if (d) d.open = true; });
+  const f = sessionStorage.getItem("alfred-focus"); if (f && document.getElementById(f)) document.getElementById(f).focus();
+  sessionStorage.removeItem("alfred-focus");
+} catch (e) {}
 const status = document.getElementById("status");
 const note = document.getElementById("note");
 let busy = 0;
@@ -320,11 +330,12 @@ async function act(body) {
 // A tick waits five seconds before it is written, so a stray click can be taken back.
 document.querySelectorAll("button.done").forEach(b => b.addEventListener("click", () => {
   const li = b.closest("li");
-  if (b.dataset.timer) { clearTimeout(+b.dataset.timer); delete b.dataset.timer; li.classList.remove("gone"); b.textContent = "done"; busy--; say("Kept in Now."); return; }
-  busy++; li.classList.add("gone"); b.textContent = "undo"; say("Marking it done in 5 seconds. Undo keeps it.");
+  const label = b.getAttribute("aria-label");
+  if (b.dataset.timer) { clearTimeout(+b.dataset.timer); delete b.dataset.timer; li.classList.remove("gone"); b.textContent = "done"; b.setAttribute("aria-label", label.replace(/^Undo: /, "Mark done: ")); busy--; say("Kept in Now."); return; }
+  busy++; li.classList.add("gone"); b.textContent = "undo"; b.setAttribute("aria-label", label.replace(/^Mark done: /, "Undo: ")); say("Marking it done in 5 seconds. Press undo to keep it.");
   b.dataset.timer = setTimeout(async () => {
     delete b.dataset.timer;
-    try { say(await act({ op: "done", text: b.dataset.t })); setTimeout(() => location.reload(), 900); }
+    try { say(await act({ op: "done", text: b.dataset.t })); setTimeout(reload, 2500); }
     catch (e) { li.classList.remove("gone"); b.textContent = "done"; busy--; say(e.message); }
   }, 5000);
 }));
@@ -342,7 +353,7 @@ if (addBtn) {
 setInterval(async () => {
   try {
     const r = await fetch("/sha"); const now = await r.text();
-    if (now !== sha && !busy && !(note && note.value.trim())) location.reload();
+    if (now !== sha && !busy && !(note && note.value.trim())) reload();
   } catch (e) {}
 }, 4000);
 </script>

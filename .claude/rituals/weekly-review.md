@@ -56,3 +56,7 @@ their notes say "pages: yes", offer once to show step 5 as a page (`lavish`).
      your therapist"; skip it if others see their screen. Never read them.
    - Stopping early: `./life pending clear reviewed`; last week stays in
      force.
+   - `backup:` in the packet: offer once, "Back up to your private GitHub
+     copy?" On yes: `./life backup` (it refuses a public repo and brings in
+     notes from `phone.md`). `update:`: say in one line what's new
+     (`./life update`); on yes, `./life update --apply`.
