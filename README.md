@@ -389,6 +389,11 @@ then (Haiku 4.5, four phrasings, 5 runs each):
 
 20 of 20, plus 5 of 5 in the full run above. About $0.08 a run.
 
+**On Codex** (gpt-6-sol, 3 runs each, 2026-10-14, `AGENT=codex`): 12 of 12
+with ALFRED's hooks trusted, and 12 of 12 with them untrusted, the written
+rule alone. That's a strong model; a small model without hooks, and
+OpenCode, aren't measured yet.
+
 **What the bench caught along the way** (each fixed, each with a test):
 
 - Haiku planned the day, then never wrote the plan; said "great!" to "it's
