@@ -2,9 +2,9 @@ name: test
 
 on:
   push:
-    paths: [life, .claude/settings.json, .claude/skills/i-have-adhd/always-on.md, .github/**]
+    paths: [life, .claude/page.py, .claude/settings.json, .claude/skills/i-have-adhd/always-on.md, .github/**]
   pull_request:
-    paths: [life, .claude/settings.json, .claude/skills/i-have-adhd/always-on.md, .github/**]
+    paths: [life, .claude/page.py, .claude/settings.json, .claude/skills/i-have-adhd/always-on.md, .github/**]
 
 jobs:
   life:

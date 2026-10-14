@@ -43,7 +43,9 @@ checked against this list. If a change fails one, it needs a very good reason.
   agent read the same content twice, and weigh every byte added to
   `AGENTS.md` or the start output: it is paid every session.
 - **Plain bash, portable.** `life` must run on macOS (bash 3.2, BSD awk) and
-  Linux. No `date -d`, no gawk-only functions.
+  Linux. No `date -d`, no gawk-only functions. The one exception is the
+  optional page, `.claude/page.py`: Python 3.8+, standard library only,
+  loopback only, and it writes only by running `./life`.
 - **Agent-first CLI (AXI).** File edits go through `./life` commands: compact
   output, ids, a `next:` hint, errors on stderr with exit 2 that name the
   fix. Markdown stays the source of truth; nothing is stored beside it. The

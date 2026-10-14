@@ -649,6 +649,40 @@ has "adhd trial is an experiment" "$(awk '/^## Trying/,/^## Retired/' preference
 has "the trial is judged on a Sunday a week or more away" "$(cat preferences.md)" "check $(date -d '+9 days' +%Y-%m-%d 2>/dev/null || date -v+9d +%Y-%m-%d)"
 has "about the person points to it" "$(cat AGENTS.md)" "as an experiment in preferences.md"
 
+# --- the page (needs python3 and curl; LIFE_PAGE_NO_BROWSER keeps the browser shut)
+if command -v python3 >/dev/null && command -v curl >/dev/null; then
+  fresh setup
+  out="$(python3 -I .claude/page.py html)"
+  has "page shows Now" "$out" "Retry tests from case 3"
+  has "page greets by name" "$out" '<span class="who">Kavya'
+  has "page shows where they stopped" "$out" "test case 3 of 5"
+  has "page counts waiting days neutrally" "$out" "waiting "
+  ./life add 'a <b>tag</b>' --now >/dev/null
+  has "page escapes" "$(python3 -I .claude/page.py html)" "a &lt;b&gt;tag&lt;/b&gt;"
+  export LIFE_PAGE_NO_BROWSER=1 LIFE_PAGE_PORT=$((20000 + $$ % 20000))
+  U="http://127.0.0.1:$LIFE_PAGE_PORT"
+  post() { curl -s -X POST -H 'Content-Type: application/json' -H "Origin: ${2:-$U}" -d "$1" "$U/act"; }
+  has "page on" "$(./life page on)" "ok: the page opens at every session start"
+  [ -f .life/page-on ] && ok || bad "page on leaves the flag"
+  has "page add goes through life" "$(post '{"op":"add","text":"call the tailor"}')" "In the Inbox"
+  has "page add lands in Inbox" "$(./life queue inbox)" "call the tailor ($TODAY)"
+  has "page done" "$(post '{"op":"done","text":"Book the Passport Seva appointment (2 min: open the site, pick a slot)"}')" "Done."
+  has "page done moved it" "$(./life queue done)" "Book the Passport Seva"
+  has "page done is logged as a win" "$(sed -n '1,12p' current.md)" "- Book the Passport Seva"
+  has "page still shows the last stopped-at" "$(python3 -I .claude/page.py html)" "test case 3 of 5"
+  has "page done needs the exact item" "$(post '{"op":"done","text":"Book the"}')" "moved since"
+  has "page refuses other origins" "$(post '{"op":"add","text":"x"}' http://evil.example)" "forbidden"
+  ./life page off >/dev/null
+  if curl -s "$U/whoami" >/dev/null; then bad "page off stops the server"; else ok; fi
+  [ -f .life/page-on ] && bad "page off clears the flag" || ok
+  ./life start >/dev/null
+  if curl -s "$U/whoami" >/dev/null; then bad "start starts no page unless it is on"; else ok; fi
+  touch .life/page-on; ./life start >/dev/null
+  has "start opens the page when on" "$(curl -s "$U/whoami")" "\"root\""
+  python3 -I .claude/page.py stop
+  unset LIFE_PAGE_NO_BROWSER LIFE_PAGE_PORT
+fi
+
 # --- help is agent-first
 has "help lists ids" "$(./life help)" "Ids: n1 = first Now item"
 out="$(./life frob 2>&1)"; rc=$?

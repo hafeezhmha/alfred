@@ -163,6 +163,24 @@ and `./life nudge off` stops it. Setup offers it too, so you may never need to
 type this. For the Sunday meeting, a repeating reminder in the app you already
 trust (calendar, task app) works best, even with the laptop shut.
 
+### A page on the desk
+
+Some brains trust what they can see. ALFRED can keep a quiet page open in
+your browser: where you left off, today's line from Sunday, Now with a
+"done" button each, and a box to jot a thought into the Inbox.
+
+```
+./life page        open it now
+./life page on     open it whenever ALFRED starts (one tab, not one per session)
+./life page off    stop it
+```
+
+It runs on your own computer only (`127.0.0.1`), needs `python3`, and writes
+nothing itself: a tick or a jot goes through `./life`, like ALFRED's own
+edits. A tick waits five seconds, so a stray click can be taken back. When
+ALFRED changes the files in the chat, the page follows. Off by default,
+because a screen your family can see is a screen your plans are on.
+
 ## Promises ALFRED keeps
 
 | Promise | What that means in practice |
@@ -226,6 +244,7 @@ edit by hand.
 ./life resume          back after a gap: today's plan, where you stopped
 ./life review          the Sunday agenda on one screen (then ./life week set)
 ./life nudge on 09:30  a daily desktop nudge
+./life page            today in your browser: tick done, jot to Inbox
 ./life help            everything else
 ```
 

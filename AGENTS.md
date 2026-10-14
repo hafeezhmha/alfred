@@ -157,7 +157,7 @@ next. This covers:
 - sending a message, email or calendar invite, posting anywhere;
 - buying, booking, cancelling or subscribing;
 - changing settings in any external app or account, or scheduling anything
-  on their computer (`./life nudge on`);
+  on their computer (`./life nudge on`, `./life page on`);
 - publishing a file or page (never publish personal data to a public host).
 
 Before asking, say exactly what will be sent or changed, and to whom.

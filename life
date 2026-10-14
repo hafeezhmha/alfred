@@ -825,6 +825,8 @@ cmd_start() { # the whole session-start read, in one call, for every agent
   [ -f .life/SETUP_NEEDED ] && return 0
   is_template && return 0
   date +%Y-%m-%d > .life/last-start # a session happened today, so no nudge
+  # the page, if they turned it on; quiet, never fatal, no second tab
+  if [ -f "$PAGE_ON" ] && command -v python3 >/dev/null; then python3 -I .claude/page.py open --if-closed >/dev/null 2>&1 || true; fi
   echo "context:"
   awk '{sub(/\r$/, "")} /^## /{f=1} f' context.md | sed '/^$/d; s/^/  /'
   if [ -f preferences.md ]; then
@@ -908,6 +910,20 @@ cmd_nudge() {
     off) nudge_off ;;
     test) NUDGE_FORCE=1 nudge_show ;;
     *) echo "usage: ./life nudge [on HH:MM [private] | off | test]"; exit 1 ;;
+  esac
+}
+
+# ---------- the page: today in the browser (.claude/page.py, loopback only) ----------
+PAGE_ON=".life/page-on"
+
+cmd_page() { # page [on|off]: open it now, or at every session start
+  command -v python3 >/dev/null || die "the page needs python3. macOS: xcode-select --install; Linux: install python3 with your package manager"
+  case "${1:-}" in
+    "") python3 -I .claude/page.py open ;;
+    on) mkdir -p .life; touch "$PAGE_ON"; python3 -I .claude/page.py open
+        echo "ok: the page opens at every session start (one tab, not one per session). ./life page off stops it" ;;
+    off) rm -f "$PAGE_ON"; python3 -I .claude/page.py stop; echo "ok: page off; its server is stopped. ./life page still opens it once" ;;
+    *) die "usage: ./life page [on|off]" ;;
   esac
 }
 
@@ -1161,6 +1177,7 @@ case "$CMD" in
   pref) shift; cmd_pref "$@" ;;
   resume) cmd_resume ;;
   nudge) shift; cmd_nudge "$@" ;;
+  page) shift; cmd_page "$@" ;;
   help|-h|--help)
     cat <<'HELP'
 life: ALFRED's notebook tool. Files are the truth; these commands read and edit them safely.
@@ -1212,6 +1229,8 @@ upkeep
   ./life check                    structure problems, each with its fix
   ./life guard                    template repo only: refuse a commit carrying personal data (pre-commit hook: git config core.hooksPath .github/hooks)
   ./life nudge on HH:MM [private] | off | test    daily desktop nudge, only on days ALFRED wasn't opened
+  ./life page [on|off]            today in the browser: Now (tick done), jot to Inbox, where they stopped; on = at every session start
+                                  from an agent sandbox the server stops with the command: have them type ! ./life page
 HELP
     ;;
   *) die "unknown command '$1'. run: ./life help" ;;
