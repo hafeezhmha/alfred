@@ -489,7 +489,7 @@ def open_page(if_closed):
         subprocess.Popen([sys.executable, "-I", str(Path(__file__).resolve()), "serve"], cwd=ROOT,
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                          start_new_session=True)
-        for _ in range(30):
+        for _ in range(100):  # a cold start on a Mac can take a few seconds
             w = whoami()
             if ours(w):
                 break

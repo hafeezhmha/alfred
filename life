@@ -920,8 +920,9 @@ cmd_page() { # page [on|off]: open it now, or at every session start
   command -v python3 >/dev/null || die "the page needs python3. macOS: xcode-select --install; Linux: install python3 with your package manager"
   case "${1:-}" in
     "") python3 -I .claude/page.py open ;;
-    on) mkdir -p .life; touch "$PAGE_ON"; python3 -I .claude/page.py open
-        echo "ok: the page opens at every session start (one tab, not one per session). ./life page off stops it" ;;
+    on) mkdir -p .life; touch "$PAGE_ON"
+        echo "ok: the page opens at every session start (one tab, not one per session). ./life page off stops it"
+        python3 -I .claude/page.py open ;;
     off) rm -f "$PAGE_ON"; python3 -I .claude/page.py stop; echo "ok: page off; its server is stopped. ./life page still opens it once" ;;
     *) die "usage: ./life page [on|off]" ;;
   esac
