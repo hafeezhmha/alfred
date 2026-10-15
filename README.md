@@ -71,7 +71,8 @@ Tools, Lunatask) will serve you better today, and that's a fine choice.
    echo 'alfred() { cd ~/alfred && claude "${*:-Hello, Alfred.}"; }' >> ~/.zshrc
    ```
 
-   Then open a new terminal. (bash: `~/.bashrc`.)
+   Then open a new terminal. (bash: `~/.bashrc`.) No Claude plan? OpenCode
+   and Codex both have a free way in; their front doors are just below.
 3. **Type `alfred`.** He asks three questions: what to call you, one thing
    that keeps slipping, and whether you'd like ADHD-shaped replies. That's
    setup.
@@ -86,16 +87,38 @@ interview, pausable, and it can show its proposal as a page you click
 through and mark up. (Pages need Node.js. Text works just as well.)
 
 <details>
-<summary><b>Using OpenCode or Codex instead?</b> (same ALFRED, a few differences)</summary>
+<summary><b>No Claude plan? Use OpenCode or Codex</b> (free ways in, same ALFRED, a few differences)</summary>
 
 <br>
 
-All three agents read the same `AGENTS.md` and start every session with one
-call to `./life start`, so nothing gets loaded twice. Change the front door:
+All three agents read the same `AGENTS.md`, the same skills and the same
+`./life`, so ALFRED is the same butler in each, and nothing gets loaded
+twice. Pick one and change the front door:
 
-- **OpenCode:** `alfred() { cd ~/alfred && opencode; }`, then say hello.
-- **Codex:** `alfred() { cd ~/alfred && codex "${*:-Hello, Alfred.}"; }`.
-  Codex has no `/` shortcuts here; plain words do everything.
+- **OpenCode: free, open source, no card.** It comes with a few free
+  models that work without an account. Install it with
+  `curl -fsSL https://opencode.ai/install | bash`, then
+  `alfred() { cd ~/alfred && opencode; }` and say hello. `/life`, `/stuck`
+  and `/grill-me` work here too.
+- **Codex: free with a ChatGPT account.** Codex comes with every ChatGPT
+  plan, Free included (Free and Go have tighter limits; Go is ₹399 a month
+  in India). Install it with `npm install -g @openai/codex`, run `codex`
+  once to sign in with ChatGPT, then
+  `alfred() { cd ~/alfred && codex "${*:-Hello, Alfred.}"; }`. Codex has no
+  `/` shortcuts here; plain words do everything ("plan my day", "I'm
+  stuck", "grill me on this").
+
+> [!IMPORTANT]
+> **Free models and your life.** ALFRED reads your notes, so check what a
+> free model does with them before you start. In OpenCode, type `/models`
+> and look the model up on the [Zen page](https://opencode.ai/docs/zen/):
+> some free ones are trials whose makers may train on what you send (the
+> usual default, Big Pickle, is one); others keep nothing. Pick one that
+> keeps nothing. Free models come and go, so look again if yours vanishes.
+> Already paying for ChatGPT, GitHub Copilot or an API key? OpenCode's
+> `/connect` uses that instead. On ChatGPT, the "Improve the model for
+> everyone" switch in Settings, Data controls decides whether your chats
+> train their models.
 
 What differs:
 
@@ -105,7 +128,9 @@ What differs:
 - **OpenCode** has no hooks. ALFRED reads his notes after your first
   message, and the crisis safety net and the save rely on the model
   following the written rules. A small model missed a written rule 1 time
-  in 5 in our tests, so pick a strong model for OpenCode.
+  in 5 in our tests, and free models are often small, so pick the
+  strongest one on offer. The helplines are in [Not therapy](#not-therapy)
+  whichever agent you use.
 
 </details>
 
@@ -115,9 +140,11 @@ What differs:
 <br>
 
 - [Claude Code](https://claude.com/claude-code), [OpenCode](https://opencode.ai)
-  or Codex, with a model account. **What it costs:** ALFRED is free; the
-  model isn't. Claude Code needs a Claude Pro plan (about $17-20 a month);
-  Codex works on ChatGPT's Free and Go plans (Go is ₹399 a month in India).
+  or Codex. **What it costs:** ALFRED is free; the model is the only bill,
+  and it can be zero. OpenCode has free models (no account) and Codex comes
+  with ChatGPT's Free plan, both with limits (see "No Claude plan?" above).
+  Claude Code needs a Claude Pro plan (about $17-20 a month); ChatGPT Go
+  (₹399 a month in India) gives Codex more room.
 - macOS or Linux, same steps on both. On a new Mac, `git` asks to install the
   Command Line Tools the first time; say yes. On Windows, use WSL.
 - Git, and a GitHub account to hold your private copy. Cloning a private
@@ -390,6 +417,7 @@ Want one of these sooner, or something else entirely?
 | `.claude/` | The three commands, the rituals they run (`rituals/`), the skills behind them, the hooks (`settings.json`) and the page (`page.py`). |
 | `.codex/hooks.json` | The same hooks for Codex: notes at start, the crisis safety net, the end-of-reply save. |
 | `.opencode/commands/` | Makes the same `/` commands work in OpenCode. |
+| `.agents/skills` | A link to `.claude/skills`, so Codex finds the same skills (OpenCode reads them where they are). |
 | `.github/` | Tests, the agent bench, and the git guard that refuses to push your copy to a public repo. |
 | `examples/kavya/` | A filled-in example (a developer in Bangalore), so you can see what "set up" looks like. |
 

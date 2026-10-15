@@ -409,6 +409,7 @@ has "yesterday's owed write never blocks" "$(./life pending)" "pending: none"
 hk="$(awk -F'"command": "' 'NF > 1 {sub(/",$/, "", $2); print $2}' .claude/settings.json | sed -n 2p | sed 's/\\"/"/g')"
 has "Claude Code Stop hook runs the gate" "$hk" "./life gate"
 has "Codex Stop hook runs the gate" "$(cat "$REPO/.codex/hooks.json")" 'life\" gate'
+has "Codex finds the skills" "$(readlink "$REPO/.agents/skills")" "../.claude/skills"
 
 # --- safety net on what the person sends (UserPromptSubmit hook)
 fresh

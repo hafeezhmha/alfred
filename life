@@ -567,6 +567,7 @@ FILES
     esac
   done
   [ -x life ] || chmod +x life
+  [ -e .agents/skills ] || { mkdir -p .agents && ln -s ../.claude/skills .agents/skills; }   # Codex finds skills only in .agents/skills
   if git rev-parse --git-dir >/dev/null 2>&1; then
     id=""; git config user.email >/dev/null 2>&1 || id="-c user.name=ALFRED -c user.email=alfred@localhost"
     # shellcheck disable=SC2086,SC2046  # repo paths without spaces; $id is two fixed -c flags

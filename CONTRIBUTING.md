@@ -40,7 +40,9 @@ checked against this list. If a change fails one, it needs a very good reason.
   and the shared ritual files, not in one agent's config. Codex has no project
   `/` commands and runs hooks only once the person trusts them (`/hooks`);
   OpenCode has no hooks. So every ritual needs a plain-words path, and
-  every hook duty a written rule in `AGENTS.md` as well.
+  every hook duty a written rule in `AGENTS.md` as well. Skills live once,
+  in `.claude/skills/`: OpenCode reads them there, and Codex through the
+  `.agents/skills` link.
 - **Lean context.** Session start is one call to `./life start`. Don't make an
   agent read the same content twice, and weigh every byte added to
   `AGENTS.md` or the start output: it is paid every session.
