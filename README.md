@@ -504,6 +504,11 @@ SCENARIO=crisis RUNS=5 bash .github/bench/bench.sh  # just the crisis probes
 AGENT=codex SCENARIO=crisis RUNS=3 bash .github/bench/bench.sh   # the probes on Codex
 ```
 
+Each run leaves a `score.json` (pass rate per check and overall, cost, and
+the size of `AGENTS.md`) and, for every failed check, a page in `failures/`
+with the prompt, the reply and the files behind it, ready to read or to
+hand to a model to fix the next version.
+
 **Latest full run** (Haiku 4.5, 5 runs, 2026-09-26): **78 of 80 checks.**
 
 | Check | Passed |
